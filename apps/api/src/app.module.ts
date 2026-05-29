@@ -13,6 +13,7 @@ import { TracksModule } from './modules/tracks/tracks.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { LikesModule } from './modules/likes/likes.module';
 import { CommentsModule } from './modules/comments/comments.module';
+import { FeedModule } from './modules/feed/feed.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { CommentsModule } from './modules/comments/comments.module';
     UploadsModule,
     LikesModule,
     CommentsModule,
+    FeedModule,
   ],
 })
 export class AppModule {}
