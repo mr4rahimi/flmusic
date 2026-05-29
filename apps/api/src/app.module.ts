@@ -11,6 +11,8 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
 import { FollowersModule } from './modules/followers/followers.module';
 import { TracksModule } from './modules/tracks/tracks.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { LikesModule } from './modules/likes/likes.module';
+import { CommentsModule } from './modules/comments/comments.module';
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     FollowersModule,
     TracksModule,
     UploadsModule,
+    LikesModule,
+    CommentsModule,
   ],
 })
 export class AppModule {}
