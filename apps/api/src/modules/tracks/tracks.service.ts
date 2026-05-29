@@ -10,6 +10,7 @@ import type { Queue } from 'bull';
 import { Track, TrackVisibility } from './track.entity';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
+import { SearchService } from '../search/search.service';
 
 @Injectable()
 export class TracksService {
@@ -18,6 +19,7 @@ export class TracksService {
     private readonly trackRepo: Repository<Track>,
     @InjectQueue('audio')
     private readonly audioQueue: Queue,
+    private readonly searchService: SearchService,
   ) {}
 
   async create(
@@ -89,7 +91,13 @@ export class TracksService {
     if (track.userId !== userId) throw new ForbiddenException();
 
     await this.trackRepo.update(id, dto);
-    return this.trackRepo.findOne({ where: { id } }) as Promise<Track>;
+    const updated = await this.trackRepo.findOne({
+      where: { id },
+      relations: { user: true },
+    }) as Track;
+
+    await this.searchService.indexTrack(updated);
+    return updated;
   }
 
   async delete(id: string, userId: string): Promise<void> {
@@ -97,6 +105,7 @@ export class TracksService {
     if (!track) throw new NotFoundException('Track not found');
     if (track.userId !== userId) throw new ForbiddenException();
 
+    await this.searchService.removeTrack(id);
     await this.trackRepo.remove(track);
   }
 

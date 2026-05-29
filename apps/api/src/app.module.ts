@@ -14,6 +14,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
 import { LikesModule } from './modules/likes/likes.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { FeedModule } from './modules/feed/feed.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { FeedModule } from './modules/feed/feed.module';
     LikesModule,
     CommentsModule,
     FeedModule,
+    SearchModule,
   ],
 })
 export class AppModule {}
