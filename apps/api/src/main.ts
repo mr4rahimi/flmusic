@@ -10,10 +10,8 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('port') || 3000;
 
-  // Global prefix
   app.setGlobalPrefix('api/v1');
 
-  // Validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -22,13 +20,11 @@ async function bootstrap() {
     }),
   );
 
-  // CORS
   app.enableCors({
-    origin: ['http://localhost:3001'],
-    credentials: true,
+    origin: '*',
+    credentials: false,
   });
 
-  // Swagger
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Music Platform API')
     .setDescription('API documentation')
