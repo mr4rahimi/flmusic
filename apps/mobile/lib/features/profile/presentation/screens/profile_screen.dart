@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/profile_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/feed/data/feed_models.dart';
@@ -28,14 +29,12 @@ class ProfileScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline,
-                  color: Colors.redAccent, size: 48),
+              const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
               const SizedBox(height: 16),
               const Text('خطا در بارگذاری پروفایل'),
               const SizedBox(height: 8),
               ElevatedButton(
-                onPressed: () =>
-                    ref.invalidate(profileNotifierProvider(username)),
+                onPressed: () => ref.invalidate(profileNotifierProvider(username)),
                 child: const Text('تلاش مجدد'),
               ),
             ],
@@ -43,10 +42,18 @@ class ProfileScreen extends ConsumerWidget {
         ),
         data: (profile) => CustomScrollView(
           slivers: [
-            // AppBar
             SliverAppBar(
               expandedHeight: 200,
               pinned: true,
+              actions: isMe
+                  ? [
+                      IconButton(
+                        icon: const Icon(Icons.logout_rounded),
+                        tooltip: 'خروج',
+                        onPressed: () => _showLogoutDialog(context, ref),
+                      ),
+                    ]
+                  : null,
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: BoxDecoration(
@@ -63,7 +70,6 @@ class ProfileScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 48),
-                      // Avatar
                       CircleAvatar(
                         radius: 44,
                         backgroundColor: AppTheme.primaryColor,
@@ -77,7 +83,6 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Username
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -101,27 +106,20 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
             ),
-
-            // Profile Info
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Bio
                     if (profile.bio != null) ...[
                       Text(
                         profile.bio!,
                         style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 14,
-                        ),
+                            color: AppTheme.textSecondary, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                     ],
-
-                    // Stats
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -138,8 +136,6 @@ class ProfileScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-
-                    // Follow / Edit Button
                     if (!isMe)
                       SizedBox(
                         width: double.infinity,
@@ -163,7 +159,6 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-
                     if (isMe)
                       SizedBox(
                         width: double.infinity,
@@ -180,7 +175,6 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-
                     const SizedBox(height: 16),
                     const Divider(color: AppTheme.surfaceColor),
                     const SizedBox(height: 8),
@@ -199,8 +193,6 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
             ),
-
-            // Tracks
             tracksAsync.when(
               loading: () => const SliverToBoxAdapter(
                 child: Center(child: CircularProgressIndicator()),
@@ -213,11 +205,9 @@ class ProfileScreen extends ConsumerWidget {
                       child: Padding(
                         padding: EdgeInsets.all(32),
                         child: Center(
-                          child: Text(
-                            'هنوز آهنگی آپلود نشده',
-                            style:
-                                TextStyle(color: AppTheme.textSecondary),
-                          ),
+                          child: Text('هنوز آهنگی آپلود نشده',
+                              style:
+                                  TextStyle(color: AppTheme.textSecondary)),
                         ),
                       ),
                     )
@@ -234,6 +224,34 @@ class ProfileScreen extends ConsumerWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showAdaptiveDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.surfaceColor,
+        title: const Text('خروج', style: TextStyle(color: AppTheme.textPrimary)),
+        content: const Text('مطمئنی می‌خوای خارج بشی؟',
+            style: TextStyle(color: AppTheme.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('انصراف',
+                style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await Future.delayed(const Duration(milliseconds: 100));
+              await ref.read(authStateProvider.notifier).logout();
+            },
+            child: const Text('خروج',
+                style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
       ),
     );
   }
@@ -279,13 +297,11 @@ class ProfileScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'ویرایش پروفایل',
-              style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold),
-            ),
+            const Text('ویرایش پروفایل',
+                style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             TextField(
               controller: bioController,
@@ -335,13 +351,9 @@ class _StatItem extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 12,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(
+                color: AppTheme.textSecondary, fontSize: 12)),
       ],
     );
   }

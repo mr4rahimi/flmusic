@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -6,28 +7,63 @@ final secureStorageProvider = Provider<SecureStorageService>((ref) {
 });
 
 class SecureStorageService {
-  final _storage = const FlutterSecureStorage();
+  // Linux desktop fallback — در memory نگه میداره
+  static String? _accessToken;
+  static String? _refreshToken;
 
-  static const _accessTokenKey = 'access_token';
-  static const _refreshTokenKey = 'refresh_token';
+  final _storage = const FlutterSecureStorage(
+    lOptions: LinuxOptions(),
+  );
 
   Future<void> saveTokens({
     required String accessToken,
     required String refreshToken,
   }) async {
-    await Future.wait([
-      _storage.write(key: _accessTokenKey, value: accessToken),
-      _storage.write(key: _refreshTokenKey, value: refreshToken),
-    ]);
+    _accessToken = accessToken;
+    _refreshToken = refreshToken;
+
+    if (!kIsWeb) {
+      try {
+        await Future.wait([
+          _storage.write(key: 'access_token', value: accessToken),
+          _storage.write(key: 'refresh_token', value: refreshToken),
+        ]);
+      } catch (e) {
+        debugPrint('SecureStorage write error: $e');
+      }
+    }
   }
 
-  Future<String?> getAccessToken() => _storage.read(key: _accessTokenKey);
-  Future<String?> getRefreshToken() => _storage.read(key: _refreshTokenKey);
+  Future<String?> getAccessToken() async {
+    if (_accessToken != null) return _accessToken;
+    try {
+      return await _storage.read(key: 'access_token');
+    } catch (e) {
+      debugPrint('SecureStorage read error: $e');
+      return null;
+    }
+  }
+
+  Future<String?> getRefreshToken() async {
+    if (_refreshToken != null) return _refreshToken;
+    try {
+      return await _storage.read(key: 'refresh_token');
+    } catch (e) {
+      debugPrint('SecureStorage read error: $e');
+      return null;
+    }
+  }
 
   Future<void> clearTokens() async {
-    await Future.wait([
-      _storage.delete(key: _accessTokenKey),
-      _storage.delete(key: _refreshTokenKey),
-    ]);
+    _accessToken = null;
+    _refreshToken = null;
+    try {
+      await Future.wait([
+        _storage.delete(key: 'access_token'),
+        _storage.delete(key: 'refresh_token'),
+      ]);
+    } catch (e) {
+      debugPrint('SecureStorage delete error: $e');
+    }
   }
 }

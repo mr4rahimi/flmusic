@@ -20,7 +20,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _login() async {
     setState(() { _loading = true; _error = null; });
     try {
-      await ref.read(authActionsProvider).login(
+      await ref.read(authStateProvider.notifier).login(
         _emailController.text.trim(),
         _passwordController.text,
       );

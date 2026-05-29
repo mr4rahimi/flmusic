@@ -15,11 +15,13 @@ class MusicApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    return MaterialApp.router(
-      title: 'Music Platform',
-      theme: AppTheme.dark,
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
+    return AuthRedirectWrapper(
+      child: MaterialApp.router(
+        title: 'Music Platform',
+        theme: AppTheme.dark,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }

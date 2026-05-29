@@ -21,7 +21,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _register() async {
     setState(() { _loading = true; _error = null; });
     try {
-      await ref.read(authActionsProvider).register(
+      await ref.read(authStateProvider.notifier).register(
         _usernameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
