@@ -7,6 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Like } from './like.entity';
 import { Track } from '../tracks/track.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/notification.entity';
 
 @Injectable()
 export class LikesService {
@@ -15,25 +17,29 @@ export class LikesService {
     private readonly likeRepo: Repository<Like>,
     @InjectRepository(Track)
     private readonly trackRepo: Repository<Track>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async like(userId: string, trackId: string): Promise<void> {
     const track = await this.trackRepo.findOne({ where: { id: trackId } });
     if (!track) throw new NotFoundException('Track not found');
 
-    const existing = await this.likeRepo.findOne({
-      where: { userId, trackId },
-    });
+    const existing = await this.likeRepo.findOne({ where: { userId, trackId } });
     if (existing) throw new ConflictException('Already liked');
 
     await this.likeRepo.save(this.likeRepo.create({ userId, trackId }));
     await this.trackRepo.increment({ id: trackId }, 'likesCount', 1);
+
+    await this.notificationsService.create(
+      track.userId,
+      userId,
+      NotificationType.LIKE,
+      trackId,
+    );
   }
 
   async unlike(userId: string, trackId: string): Promise<void> {
-    const existing = await this.likeRepo.findOne({
-      where: { userId, trackId },
-    });
+    const existing = await this.likeRepo.findOne({ where: { userId, trackId } });
     if (!existing) throw new NotFoundException('Like not found');
 
     await this.likeRepo.remove(existing);

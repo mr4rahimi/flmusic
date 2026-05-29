@@ -8,6 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Follower } from './follower.entity';
 import { User } from '../users/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/notification.entity';
 
 @Injectable()
 export class FollowersService {
@@ -16,6 +18,7 @@ export class FollowersService {
     private readonly followerRepo: Repository<Follower>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async follow(currentUserId: string, username: string): Promise<void> {
@@ -30,11 +33,18 @@ export class FollowersService {
     });
     if (existing) throw new ConflictException('Already following');
 
-    const follow = this.followerRepo.create({
-      followerId: currentUserId,
-      followingId: targetUser.id,
-    });
-    await this.followerRepo.save(follow);
+    await this.followerRepo.save(
+      this.followerRepo.create({
+        followerId: currentUserId,
+        followingId: targetUser.id,
+      }),
+    );
+
+    await this.notificationsService.create(
+      targetUser.id,
+      currentUserId,
+      NotificationType.FOLLOW,
+    );
   }
 
   async unfollow(currentUserId: string, username: string): Promise<void> {

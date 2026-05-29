@@ -8,6 +8,8 @@ import { Repository } from 'typeorm';
 import { Comment } from './comment.entity';
 import { Track } from '../tracks/track.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/notification.entity';
 
 @Injectable()
 export class CommentsService {
@@ -16,19 +18,23 @@ export class CommentsService {
     private readonly commentRepo: Repository<Comment>,
     @InjectRepository(Track)
     private readonly trackRepo: Repository<Track>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
-  async create(
-    userId: string,
-    trackId: string,
-    dto: CreateCommentDto,
-  ): Promise<Comment> {
+  async create(userId: string, trackId: string, dto: CreateCommentDto): Promise<Comment> {
     const track = await this.trackRepo.findOne({ where: { id: trackId } });
     if (!track) throw new NotFoundException('Track not found');
 
     const comment = this.commentRepo.create({ userId, trackId, content: dto.content });
     const saved = await this.commentRepo.save(comment);
     await this.trackRepo.increment({ id: trackId }, 'commentsCount', 1);
+
+    await this.notificationsService.create(
+      track.userId,
+      userId,
+      NotificationType.COMMENT,
+      saved.id,
+    );
 
     return this.commentRepo.findOne({
       where: { id: saved.id },
@@ -74,6 +80,10 @@ export class CommentsService {
     if (comment.userId !== userId) throw new ForbiddenException();
 
     await this.commentRepo.remove(comment);
-    await this.trackRepo.decrement({ id: comment.trackId }, 'commentsCount', 1);
+    await this.trackRepo.decrement(
+      { id: comment.trackId },
+      'commentsCount',
+      1,
+    );
   }
 }

@@ -15,6 +15,7 @@ import { LikesModule } from './modules/likes/likes.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { SearchModule } from './modules/search/search.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { SearchModule } from './modules/search/search.module';
     CommentsModule,
     FeedModule,
     SearchModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
