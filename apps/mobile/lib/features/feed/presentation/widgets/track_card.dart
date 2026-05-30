@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../data/feed_models.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../features/likes/presentation/providers/likes_provider.dart';
 
-class TrackCard extends StatelessWidget {
+class TrackCard extends ConsumerWidget {
   final Track track;
   final VoidCallback? onTap;
 
@@ -19,7 +21,14 @@ class TrackCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final likeStatus = ref.watch(likeStatusProvider(track.id));
+    final isLiked = likeStatus ?? false;
+    final isLoading = likeStatus == null;
+
+    final storedCount = ref.watch(likesCountProvider(track.id));
+    final displayLikes = storedCount == -1 ? track.likesCount : storedCount;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -31,7 +40,6 @@ class TrackCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cover
             ClipRRect(
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(16)),
@@ -53,7 +61,6 @@ class TrackCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Artist row — کلیک روی username
                   GestureDetector(
                     onTap: () =>
                         context.push('/profile/${track.user.username}'),
@@ -82,9 +89,7 @@ class TrackCard extends StatelessWidget {
                         Text(
                           timeago.format(track.createdAt, locale: 'fa'),
                           style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 11,
-                          ),
+                              color: AppTheme.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),
@@ -110,9 +115,7 @@ class TrackCard extends StatelessWidget {
                       child: Text(
                         track.genre!,
                         style: const TextStyle(
-                          color: AppTheme.primaryColor,
-                          fontSize: 11,
-                        ),
+                            color: AppTheme.primaryColor, fontSize: 11),
                       ),
                     ),
                   ],
@@ -125,14 +128,66 @@ class TrackCard extends StatelessWidget {
                       Text('${track.playCount}',
                           style: const TextStyle(
                               color: AppTheme.textSecondary, fontSize: 12)),
-                      const SizedBox(width: 16),
-                      const Icon(Icons.favorite_outline,
-                          size: 16, color: AppTheme.textSecondary),
-                      const SizedBox(width: 4),
-                      Text('${track.likesCount}',
-                          style: const TextStyle(
-                              color: AppTheme.textSecondary, fontSize: 12)),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: isLoading
+                            ? null
+                            : () async {
+                                final wasLiked =
+                                    ref.read(likeStatusProvider(track.id)) ??
+                                        false;
+                                final current =
+                                    ref.read(likesCountProvider(track.id));
+                                final base = current == -1
+                                    ? track.likesCount
+                                    : current;
+                                await ref
+                                    .read(likeStatusProvider(track.id)
+                                        .notifier)
+                                    .toggle();
+                                ref
+                                    .read(likesCountProvider(track.id)
+                                        .notifier)
+                                    .state = wasLiked
+                                    ? (base > 0 ? base - 1 : 0)
+                                    : base + 1;
+                              },
+                        child: Row(
+                          children: [
+                            isLoading
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 1.5,
+                                        color: AppTheme.textSecondary),
+                                  )
+                                : Icon(
+                                    isLiked
+                                        ? Icons.favorite_rounded
+                                        : Icons.favorite_outline,
+                                    size: 16,
+                                    color: isLiked
+                                        ? AppTheme.accentColor
+                                        : AppTheme.textSecondary,
+                                  ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$displayLikes',
+                              style: TextStyle(
+                                color: isLiked
+                                    ? AppTheme.accentColor
+                                    : AppTheme.textSecondary,
+                                fontSize: 12,
+                                fontWeight: isLiked
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       const Icon(Icons.comment_outlined,
                           size: 16, color: AppTheme.textSecondary),
                       const SizedBox(width: 4),
@@ -143,9 +198,7 @@ class TrackCard extends StatelessWidget {
                       Text(
                         _formatDuration(track.duration),
                         style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
-                        ),
+                            color: AppTheme.textSecondary, fontSize: 12),
                       ),
                     ],
                   ),

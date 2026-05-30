@@ -5,6 +5,7 @@ import '../providers/player_provider.dart';
 import '../../data/player_models.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../features/likes/presentation/providers/likes_provider.dart';
 
 class PlayerScreen extends ConsumerStatefulWidget {
   final PlayerTrack track;
@@ -145,33 +146,44 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           const SizedBox(height: 20),
 
           // Like & Comment
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                onPressed: _toggleLike,
-                icon: Icon(
-                  _isLiked ? Icons.favorite_rounded : Icons.favorite_outline,
-                  color: _isLiked
-                      ? AppTheme.accentColor
-                      : AppTheme.textSecondary,
-                  size: 26,
+          Builder(builder: (context) {
+            final likeStatus = ref.watch(likeStatusProvider(currentTrack.id));
+            final isLikedNow = likeStatus ?? _isLiked;
+            final likesCountNow = ref.watch(likesCountProvider(currentTrack.id));
+            final displayLikes = likesCountNow > 0 ? likesCountNow : _likesCount;
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    final wasLiked = ref.read(likeStatusProvider(currentTrack.id)) ?? false;
+                    final currentCount = ref.read(likesCountProvider(currentTrack.id));
+                    await ref.read(likeStatusProvider(currentTrack.id).notifier).toggle();
+                    ref.read(likesCountProvider(currentTrack.id).notifier).state =
+                        wasLiked ? (currentCount > 0 ? currentCount - 1 : 0) : currentCount + 1;
+                  },
+                  icon: Icon(
+                    isLikedNow ? Icons.favorite_rounded : Icons.favorite_outline,
+                    color: isLikedNow ? AppTheme.accentColor : AppTheme.textSecondary,
+                    size: 26,
+                  ),
                 ),
-              ),
-              Text('$_likesCount',
-                  style:
-                      const TextStyle(color: AppTheme.textSecondary)),
-              const SizedBox(width: 24),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.comment_outlined,
-                    color: AppTheme.textSecondary, size: 26),
-              ),
-              Text('${currentTrack.commentsCount}',
-                  style:
-                      const TextStyle(color: AppTheme.textSecondary)),
-            ],
-          ),
+                Text('$displayLikes',
+                    style: TextStyle(
+                      color: isLikedNow ? AppTheme.accentColor : AppTheme.textSecondary,
+                    )),
+                const SizedBox(width: 24),
+                IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.comment_outlined,
+                      color: AppTheme.textSecondary, size: 26),
+                ),
+                Text('${currentTrack.commentsCount}',
+                    style: const TextStyle(color: AppTheme.textSecondary)),
+              ],
+            );
+          }),
 
           // Progress Bar
           StreamBuilder<Duration>(
