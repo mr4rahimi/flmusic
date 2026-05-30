@@ -6,6 +6,7 @@ import '../../data/player_models.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../features/likes/presentation/providers/likes_provider.dart';
+import '../../../../features/comments/presentation/screens/comments_screen.dart';
 
 class PlayerScreen extends ConsumerStatefulWidget {
   final PlayerTrack track;
@@ -175,7 +176,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     )),
                 const SizedBox(width: 24),
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () => showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => CommentsScreen(
+                      trackId: currentTrack.id,
+                      trackTitle: currentTrack.title,
+                      commentsCount: currentTrack.commentsCount,
+                    ),
+                  ),
                   icon: const Icon(Icons.comment_outlined,
                       color: AppTheme.textSecondary, size: 26),
                 ),
