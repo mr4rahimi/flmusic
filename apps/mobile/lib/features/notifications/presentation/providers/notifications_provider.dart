@@ -12,7 +12,10 @@ final notificationsProvider =
 final unreadCountProvider = FutureProvider<int>((ref) async {
   final dio = ref.read(dioProvider);
   final response = await dio.get('/notifications/unread-count');
-  return response.data as int;
+  final data = response.data;
+  if (data is int) return data;
+  if (data is String) return int.tryParse(data) ?? 0;
+  return (data as num).toInt();
 });
 
 class NotificationsActions {

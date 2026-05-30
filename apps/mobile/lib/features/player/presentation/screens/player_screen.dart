@@ -1,6 +1,6 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import '../providers/player_provider.dart';
 import '../../data/player_models.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -66,7 +66,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       ),
       child: Column(
         children: [
-          // Handle
           Container(
             margin: const EdgeInsets.only(top: 12),
             width: 40,
@@ -77,8 +76,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             ),
           ),
           const SizedBox(height: 24),
-
-          // Cover
           Container(
             width: 200,
             height: 200,
@@ -93,15 +90,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.music_note_rounded,
-              color: AppTheme.primaryColor,
-              size: 80,
-            ),
+            child: const Icon(Icons.music_note_rounded,
+                color: AppTheme.primaryColor, size: 80),
           ),
           const SizedBox(height: 32),
-
-          // Title & Artist
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
@@ -109,26 +101,19 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 Text(
                   widget.track.title,
                   style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: AppTheme.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  widget.track.username,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 16,
-                  ),
-                ),
+                Text(widget.track.username,
+                    style: const TextStyle(
+                        color: AppTheme.textSecondary, fontSize: 16)),
               ],
             ),
           ),
           const SizedBox(height: 24),
-
-          // Like & Comment
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -155,63 +140,73 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           const SizedBox(height: 16),
 
           // Progress Bar
-          StreamBuilder<Duration?>(
-            stream: player.positionStream,
-            builder: (context, snapshot) {
-              final position = snapshot.data ?? Duration.zero;
-              final duration = player.duration ?? Duration.zero;
-              final progress = duration.inMilliseconds > 0
-                  ? position.inMilliseconds / duration.inMilliseconds
-                  : 0.0;
+          StreamBuilder<Duration>(
+            stream: player.onPositionChanged,
+            builder: (context, posSnapshot) {
+              final position = posSnapshot.data ?? Duration.zero;
+              return StreamBuilder<Duration>(
+                stream: player.onDurationChanged,
+                builder: (context, durSnapshot) {
+                  final duration = durSnapshot.data ??
+                      (widget.track.duration != null
+                          ? Duration(seconds: widget.track.duration!)
+                          : Duration.zero);
+                  final progress = duration.inMilliseconds > 0
+                      ? position.inMilliseconds / duration.inMilliseconds
+                      : 0.0;
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  children: [
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 3,
-                        thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 6),
-                        overlayShape: const RoundSliderOverlayShape(
-                            overlayRadius: 12),
-                        activeTrackColor: AppTheme.primaryColor,
-                        inactiveTrackColor:
-                            AppTheme.textSecondary.withOpacity(0.3),
-                        thumbColor: AppTheme.primaryColor,
-                      ),
-                      child: Slider(
-                        value: progress.clamp(0.0, 1.0),
-                        onChanged: (v) => ref
-                            .read(playerActionsProvider)
-                            .seek(Duration(
-                                milliseconds:
-                                    (v * duration.inMilliseconds).round())),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
                       children: [
-                        Text(_formatDuration(position),
-                            style: const TextStyle(
-                                color: AppTheme.textSecondary, fontSize: 12)),
-                        Text(_formatDuration(duration),
-                            style: const TextStyle(
-                                color: AppTheme.textSecondary, fontSize: 12)),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 3,
+                            thumbShape: const RoundSliderThumbShape(
+                                enabledThumbRadius: 6),
+                            overlayShape: const RoundSliderOverlayShape(
+                                overlayRadius: 12),
+                            activeTrackColor: AppTheme.primaryColor,
+                            inactiveTrackColor:
+                                AppTheme.textSecondary.withOpacity(0.3),
+                            thumbColor: AppTheme.primaryColor,
+                          ),
+                          child: Slider(
+                            value: progress.clamp(0.0, 1.0),
+                            onChanged: (v) => ref
+                                .read(playerActionsProvider)
+                                .seek(Duration(
+                                    milliseconds:
+                                        (v * duration.inMilliseconds).round())),
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(_formatDuration(position),
+                                style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12)),
+                            Text(_formatDuration(duration),
+                                style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12)),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  );
+                },
               );
             },
           ),
           const SizedBox(height: 16),
 
           // Controls
-          StreamBuilder<bool>(
-            stream: player.playingStream,
+          StreamBuilder<PlayerState>(
+            stream: player.onPlayerStateChanged,
             builder: (context, snapshot) {
-              final isPlaying = snapshot.data ?? false;
+              final isPlaying = snapshot.data == PlayerState.playing;
               return Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

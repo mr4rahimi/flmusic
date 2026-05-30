@@ -1,5 +1,5 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import '../../data/player_models.dart';
 import '../../../../core/api/api_client.dart';
 
@@ -25,11 +25,16 @@ class PlayerActions {
 
     if (track.audioUrl == null) return;
 
-    final url = '${baseUrl.replaceAll('/api/v1', '')}/${track.audioUrl}';
-    await player.setUrl(url);
-    await player.play();
+    final base = baseUrl.replaceAll('/api/v1', '');
+    final audioUrl = track.audioUrl!;
+    final url = audioUrl.startsWith('http') ? audioUrl : '$base/$audioUrl';
 
-    // increment play count
+    try {
+      await player.play(UrlSource(url));
+    } catch (e) {
+      // ignore
+    }
+
     try {
       final dio = _ref.read(dioProvider);
       await dio.post('/tracks/${track.id}/play').catchError((_) {});
@@ -38,10 +43,11 @@ class PlayerActions {
 
   Future<void> togglePlayPause() async {
     final player = _ref.read(audioPlayerProvider);
-    if (player.playing) {
+    final state = player.state;
+    if (state == PlayerState.playing) {
       await player.pause();
     } else {
-      await player.play();
+      await player.resume();
     }
   }
 

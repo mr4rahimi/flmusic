@@ -1,6 +1,6 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import '../providers/player_provider.dart';
 import '../screens/player_screen.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -29,10 +29,7 @@ class MiniPlayer extends ConsumerWidget {
           color: AppTheme.cardColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 8,
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8),
           ],
         ),
         child: Row(
@@ -57,26 +54,21 @@ class MiniPlayer extends ConsumerWidget {
                   Text(
                     track.title,
                     style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    track.username,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
+                  Text(track.username,
+                      style: const TextStyle(
+                          color: AppTheme.textSecondary, fontSize: 12)),
                 ],
               ),
             ),
-            StreamBuilder<bool>(
-              stream: player.playingStream,
+            StreamBuilder<PlayerState>(
+              stream: player.onPlayerStateChanged,
               builder: (context, snapshot) {
-                final isPlaying = snapshot.data ?? false;
+                final isPlaying = snapshot.data == PlayerState.playing;
                 return IconButton(
                   icon: Icon(
                     isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
