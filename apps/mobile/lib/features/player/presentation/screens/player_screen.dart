@@ -57,15 +57,20 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final player = ref.watch(audioPlayerProvider);
+    final currentTrack = ref.watch(currentTrackProvider) ?? widget.track;
+    final repeatMode = ref.watch(repeatModeProvider);
+    final queue = ref.watch(queueProvider);
+    final currentIndex = ref.watch(currentIndexProvider);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.of(context).size.height * 0.9,
       decoration: const BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
+          // Handle
           Container(
             margin: const EdgeInsets.only(top: 12),
             width: 40,
@@ -75,10 +80,30 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          // Queue info
+          if (queue.length > 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${currentIndex + 1} از ${queue.length}',
+                    style: const TextStyle(
+                        color: AppTheme.textSecondary, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 8),
+
+          // Cover
           Container(
-            width: 200,
-            height: 200,
+            width: 220,
+            height: 220,
             decoration: BoxDecoration(
               color: AppTheme.cardColor,
               borderRadius: BorderRadius.circular(16),
@@ -93,27 +118,33 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             child: const Icon(Icons.music_note_rounded,
                 color: AppTheme.primaryColor, size: 80),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+
+          // Title & Artist
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
               children: [
                 Text(
-                  widget.track.title,
+                  currentTrack.title,
                   style: const TextStyle(
                       color: AppTheme.textPrimary,
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
-                Text(widget.track.username,
+                const SizedBox(height: 6),
+                Text(currentTrack.username,
                     style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 16)),
+                        color: AppTheme.textSecondary, fontSize: 15)),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+
+          // Like & Comment
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -121,23 +152,26 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 onPressed: _toggleLike,
                 icon: Icon(
                   _isLiked ? Icons.favorite_rounded : Icons.favorite_outline,
-                  color: _isLiked ? AppTheme.accentColor : AppTheme.textSecondary,
-                  size: 28,
+                  color: _isLiked
+                      ? AppTheme.accentColor
+                      : AppTheme.textSecondary,
+                  size: 26,
                 ),
               ),
               Text('$_likesCount',
-                  style: const TextStyle(color: AppTheme.textSecondary)),
+                  style:
+                      const TextStyle(color: AppTheme.textSecondary)),
               const SizedBox(width: 24),
               IconButton(
                 onPressed: () {},
                 icon: const Icon(Icons.comment_outlined,
-                    color: AppTheme.textSecondary, size: 28),
+                    color: AppTheme.textSecondary, size: 26),
               ),
-              Text('${widget.track.commentsCount}',
-                  style: const TextStyle(color: AppTheme.textSecondary)),
+              Text('${currentTrack.commentsCount}',
+                  style:
+                      const TextStyle(color: AppTheme.textSecondary)),
             ],
           ),
-          const SizedBox(height: 16),
 
           // Progress Bar
           StreamBuilder<Duration>(
@@ -148,50 +182,63 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 stream: player.onDurationChanged,
                 builder: (context, durSnapshot) {
                   final duration = durSnapshot.data ??
-                      (widget.track.duration != null
-                          ? Duration(seconds: widget.track.duration!)
+                      (currentTrack.duration != null
+                          ? Duration(seconds: currentTrack.duration!)
                           : Duration.zero);
                   final progress = duration.inMilliseconds > 0
-                      ? position.inMilliseconds / duration.inMilliseconds
+                      ? (position.inMilliseconds /
+                              duration.inMilliseconds)
+                          .clamp(0.0, 1.0)
                       : 0.0;
 
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       children: [
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             trackHeight: 3,
-                            thumbShape: const RoundSliderThumbShape(
-                                enabledThumbRadius: 6),
-                            overlayShape: const RoundSliderOverlayShape(
-                                overlayRadius: 12),
+                            thumbShape:
+                                const RoundSliderThumbShape(
+                                    enabledThumbRadius: 6),
+                            overlayShape:
+                                const RoundSliderOverlayShape(
+                                    overlayRadius: 12),
                             activeTrackColor: AppTheme.primaryColor,
                             inactiveTrackColor:
                                 AppTheme.textSecondary.withOpacity(0.3),
                             thumbColor: AppTheme.primaryColor,
                           ),
                           child: Slider(
-                            value: progress.clamp(0.0, 1.0),
-                            onChanged: (v) => ref
-                                .read(playerActionsProvider)
-                                .seek(Duration(
-                                    milliseconds:
-                                        (v * duration.inMilliseconds).round())),
+                            value: progress,
+                            onChanged: (v) =>
+                                ref.read(playerActionsProvider).seek(
+                                      Duration(
+                                          milliseconds: (v *
+                                                  duration
+                                                      .inMilliseconds)
+                                              .round()),
+                                    ),
                           ),
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(_formatDuration(position),
-                                style: const TextStyle(
-                                    color: AppTheme.textSecondary,
-                                    fontSize: 12)),
-                            Text(_formatDuration(duration),
-                                style: const TextStyle(
-                                    color: AppTheme.textSecondary,
-                                    fontSize: 12)),
-                          ],
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 8),
+                          child: Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(_formatDuration(position),
+                                  style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 12)),
+                              Text(_formatDuration(duration),
+                                  style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 12)),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -200,7 +247,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               );
             },
           ),
-          const SizedBox(height: 16),
+
+          const SizedBox(height: 8),
 
           // Controls
           StreamBuilder<PlayerState>(
@@ -210,15 +258,40 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               return Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Repeat button
+                  IconButton(
+                    icon: Icon(
+                      repeatMode == RepeatMode.one
+                          ? Icons.repeat_one_rounded
+                          : Icons.repeat_rounded,
+                      color: repeatMode == RepeatMode.none
+                          ? AppTheme.textSecondary
+                          : AppTheme.primaryColor,
+                      size: 24,
+                    ),
+                    onPressed: () => ref
+                        .read(playerActionsProvider)
+                        .cycleRepeatMode(),
+                    tooltip: repeatMode == RepeatMode.none
+                        ? 'تکرار خاموش'
+                        : repeatMode == RepeatMode.all
+                            ? 'تکرار همه'
+                            : 'تکرار یک آهنگ',
+                  ),
+
+                  // Previous
                   IconButton(
                     icon: const Icon(Icons.skip_previous_rounded,
                         color: AppTheme.textPrimary, size: 36),
-                    onPressed: () {},
+                    onPressed: () =>
+                        ref.read(playerActionsProvider).playPrevious(),
                   ),
-                  const SizedBox(width: 16),
+
+                  // Play/Pause
                   GestureDetector(
-                    onTap: () =>
-                        ref.read(playerActionsProvider).togglePlayPause(),
+                    onTap: () => ref
+                        .read(playerActionsProvider)
+                        .togglePlayPause(),
                     child: Container(
                       width: 64,
                       height: 64,
@@ -235,16 +308,34 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+
+                  // Next
                   IconButton(
                     icon: const Icon(Icons.skip_next_rounded,
                         color: AppTheme.textPrimary, size: 36),
-                    onPressed: () {},
+                    onPressed: () =>
+                        ref.read(playerActionsProvider).playNext(),
+                  ),
+
+                  // Queue count
+                  Container(
+                    width: 40,
+                    alignment: Alignment.center,
+                    child: queue.length > 1
+                        ? Text(
+                            '${queue.length}',
+                            style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12),
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ],
               );
             },
           ),
+
+          const SizedBox(height: 16),
         ],
       ),
     );

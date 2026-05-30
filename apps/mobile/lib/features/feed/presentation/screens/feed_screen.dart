@@ -80,26 +80,23 @@ class FeedScreen extends ConsumerWidget {
                           return TrackCard(
                             track: track,
                             onTap: () {
-                              final playerTrack = PlayerTrack(
-                                id: track.id,
-                                title: track.title,
-                                coverUrl: track.coverUrl,
-                                audioUrl: track.audioUrl,
-                                duration: track.duration,
-                                username: track.user.username,
-                                avatarUrl: track.user.avatarUrl,
-                                likesCount: track.likesCount,
-                                commentsCount: track.commentsCount,
-                              );
-                              ref
-                                  .read(playerActionsProvider)
-                                  .playTrack(playerTrack);
+                              final queue = tracks.map((t) => PlayerTrack(
+                                id: t.id,
+                                title: t.title,
+                                coverUrl: t.coverUrl,
+                                audioUrl: t.audioUrl,
+                                duration: t.duration,
+                                username: t.user.username,
+                                avatarUrl: t.user.avatarUrl,
+                                likesCount: t.likesCount,
+                                commentsCount: t.commentsCount,
+                              )).toList();
+                              ref.read(playerActionsProvider).setQueue(queue, i);
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
-                                builder: (_) =>
-                                    PlayerScreen(track: playerTrack),
+                                builder: (_) => PlayerScreen(track: queue[i]),
                               );
                             },
                           );

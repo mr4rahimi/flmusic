@@ -1,3 +1,5 @@
+enum RepeatMode { none, one, all }
+
 class PlayerTrack {
   final String id;
   final String title;
