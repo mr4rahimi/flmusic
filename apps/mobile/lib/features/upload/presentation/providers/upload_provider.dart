@@ -1,9 +1,8 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/api/api_client.dart';
 
-enum UploadStatus { idle, downloading, uploading, processing, done, error }
+enum UploadStatus { idle, uploading, processing, done, error }
 
 class UploadState {
   final UploadStatus status;
@@ -56,7 +55,7 @@ class UploadNotifier extends StateNotifier<UploadState> {
         'title': title,
         'description': description ?? '',
         'genre': artistName,
-        'tags': tags?.join(',') ?? '',
+        if (tags != null && tags.isNotEmpty) 'tags': tags.join(','),
         'visibility': visibility,
         if (coverPath != null)
           'cover': await MultipartFile.fromFile(coverPath),
@@ -78,7 +77,6 @@ class UploadNotifier extends StateNotifier<UploadState> {
         trackId: response.data['id'],
       );
 
-      // poll تا ready بشه
       await _pollTrackStatus(response.data['id']);
     } catch (e) {
       state = state.copyWith(
@@ -92,57 +90,38 @@ class UploadNotifier extends StateNotifier<UploadState> {
     required String url,
     required String title,
     required String artistName,
-    String? coverPath,
     List<String>? tags,
     String? description,
     String visibility = 'public',
   }) async {
     try {
-      state = state.copyWith(status: UploadStatus.downloading, progress: 0);
+      state = state.copyWith(status: UploadStatus.uploading, progress: 0.2);
 
-      // دانلود فایل به temp
-      final tempDir = Directory.systemTemp;
-      final tempFile = File(
-          '${tempDir.path}/temp_audio_${DateTime.now().millisecondsSinceEpoch}.mp3');
-
-      final downloadDio = Dio();
-      (downloadDio.httpClientAdapter as dynamic).onHttpClientCreate =
-          (dynamic client) {
-        client.badCertificateCallback =
-            (dynamic cert, String host, int port) => true;
-        return client;
-      };
-      await downloadDio.download(
-        url,
-        tempFile.path,
-        options: Options(
-          receiveTimeout: const Duration(minutes: 5),
-          sendTimeout: const Duration(minutes: 5),
-        ),
-        onReceiveProgress: (received, total) {
-          if (total > 0) {
-            state = state.copyWith(progress: received / total * 0.5);
-          }
+      final dio = _ref.read(dioProvider);
+      
+      final response = await dio.post(
+        '/uploads/from-url',
+        data: {
+          'url': url,
+          'title': title,
+          'genre': artistName,
+          'description': description ?? '',
+          if (tags != null && tags.isNotEmpty) 'tags': tags,
+          'visibility': visibility,
         },
       );
 
-      // آپلود فایل دانلود شده
-      await uploadFromFile(
-        filePath: tempFile.path,
-        title: title,
-        artistName: artistName,
-        coverPath: coverPath,
-        tags: tags,
-        description: description,
-        visibility: visibility,
+      state = state.copyWith(
+        status: UploadStatus.processing,
+        progress: 1,
+        trackId: response.data['id'],
       );
 
-      // پاک کردن فایل temp
-      if (await tempFile.exists()) await tempFile.delete();
+      await _pollTrackStatus(response.data['id']);
     } catch (e) {
       state = state.copyWith(
         status: UploadStatus.error,
-        error: 'خطا در دانلود لینک: ${e.toString()}',
+        error: 'خطا در آپلود از لینک: ${e.toString()}',
       );
     }
   }
@@ -175,7 +154,6 @@ final uploadProvider =
   return UploadNotifier(ref);
 });
 
-// جستجوی live خواننده‌ها
 final artistSearchProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String>((ref, query) async {
   if (query.trim().length < 2) return [];
@@ -188,11 +166,9 @@ final artistSearchProvider =
   return List<Map<String, dynamic>>.from(response.data['data'] ?? []);
 });
 
-// جستجوی live تگ‌ها
 final tagSearchProvider =
     FutureProvider.family<List<String>, String>((ref, query) async {
   if (query.trim().length < 1) return [];
-  // تگ‌های پیشنهادی از پرکاربردترین‌ها
   final suggestions = [
     'پاپ', 'رپ', 'راک', 'کلاسیک', 'جاز', 'الکترونیک',
     'سنتی', 'مردمی', 'عاشقانه', 'شاد', 'غمگین', 'ریمیکس',

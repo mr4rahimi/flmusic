@@ -122,7 +122,6 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
         filePath: _audioFilePath!,
         title: _titleController.text.trim(),
         artistName: _artistController.text.trim(),
-        coverPath: _coverPath,
         tags: _tags,
         description: _descController.text.trim(),
         visibility: _visibility,
@@ -132,7 +131,6 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
         url: _urlController.text.trim(),
         title: _titleController.text.trim(),
         artistName: _artistController.text.trim(),
-        coverPath: _coverPath,
         tags: _tags,
         description: _descController.text.trim(),
         visibility: _visibility,
@@ -170,7 +168,6 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
     });
 
     final isLoading = uploadState.status == UploadStatus.uploading ||
-        uploadState.status == UploadStatus.downloading ||
         uploadState.status == UploadStatus.processing;
 
     return Scaffold(
@@ -196,10 +193,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
     Color color;
 
     switch (state.status) {
-      case UploadStatus.downloading:
-        message = 'در حال دانلود از لینک...';
-        icon = Icons.download_rounded;
-        color = Colors.blue;
+      case UploadStatus.uploading:
+        message = 'در حال ارسال به سرور...';
+        icon = Icons.cloud_upload_rounded;
+        color = AppTheme.primaryColor;
       case UploadStatus.uploading:
         message = 'در حال آپلود آهنگ...';
         icon = Icons.cloud_upload_rounded;
