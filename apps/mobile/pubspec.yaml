@@ -16,7 +16,6 @@ dependencies:
   dio: ^5.9.2
   flutter_secure_storage: ^9.2.4
   just_audio: ^0.10.5
-  audio_service: ^0.18.18
   cached_network_image: ^3.4.1
   flutter_svg: ^2.1.0
   timeago: ^3.7.0

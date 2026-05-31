@@ -1,7 +1,14 @@
 allprojects {
-    repositories {
-        google()
-        mavenCentral()
+    subprojects {
+        afterEvaluate {
+            configurations.all {
+                resolutionStrategy.eachDependency {
+                    if (requested.group == "org.jetbrains.kotlin") {
+                        useVersion("1.9.0")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -12,6 +19,7 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
