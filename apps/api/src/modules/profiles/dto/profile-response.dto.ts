@@ -11,6 +11,7 @@ export class ProfileResponseDto {
   @ApiProperty() bio: string | null;
   @ApiProperty() followersCount: number;
   @ApiProperty() followingCount: number;
+  @ApiProperty() tracksCount: number;
   @ApiProperty() isFollowing: boolean;
   @ApiProperty() createdAt: Date;
 }

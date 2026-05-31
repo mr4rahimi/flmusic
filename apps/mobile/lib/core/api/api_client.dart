@@ -3,18 +3,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../storage/secure_storage.dart';
 
-// Linux desktop = 127.0.0.1
-// Android emulator = 10.0.2.2
-// Android device (همشبکه) = IP لپتاپت
-const String baseUrl = kIsWeb
-    ? 'http://localhost:3000/api/v1'
-    : 'http://127.0.0.1:3000/api/v1';
+// آدرس سرور production رو اینجا بذار
+const String _productionUrl = 'https://api.flmusic.ir/api/v1';
+const String _devUrl = 'http://127.0.0.1:3000/api/v1';
+
+const String baseUrl = kReleaseMode ? _productionUrl : _devUrl;
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(BaseOptions(
     baseUrl: baseUrl,
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
     headers: {'Content-Type': 'application/json'},
   ));
 

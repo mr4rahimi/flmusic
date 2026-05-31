@@ -68,7 +68,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: AppColors.darkSurface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -79,7 +79,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppTheme.textSecondary.withOpacity(0.5),
+              color: AppColors.darkTextSecondary.withOpacity(0.5),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -91,13 +91,13 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
             child: Row(
               children: [
                 const Icon(Icons.comment_rounded,
-                    color: AppTheme.primaryColor, size: 20),
+                    color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'کامنت‌ها',
                     style: const TextStyle(
-                      color: AppTheme.textPrimary,
+                      color: AppColors.darkTextPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -107,7 +107,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                   data: (comments) => Text(
                     '${comments.length}',
                     style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 14),
+                        color: AppColors.darkTextSecondary, fontSize: 14),
                   ),
                   loading: () => const SizedBox.shrink(),
                   error: (_, __) => const SizedBox.shrink(),
@@ -116,7 +116,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
             ),
           ),
 
-          const Divider(color: AppTheme.cardColor, height: 1),
+          const Divider(color: AppColors.darkCard, height: 1),
 
           // Comments List
           Expanded(
@@ -129,7 +129,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                   children: [
                     const Text('خطا در بارگذاری',
                         style:
-                            TextStyle(color: AppTheme.textSecondary)),
+                            TextStyle(color: AppColors.darkTextSecondary)),
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () => ref
@@ -147,12 +147,12 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.chat_bubble_outline_rounded,
-                              color: AppTheme.textSecondary, size: 48),
+                              color: AppColors.darkTextSecondary, size: 48),
                           SizedBox(height: 12),
                           Text(
                             'اولین کامنت رو بذار!',
                             style: TextStyle(
-                                color: AppTheme.textSecondary,
+                                color: AppColors.darkTextSecondary,
                                 fontSize: 15),
                           ),
                         ],
@@ -184,10 +184,10 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
           // Input
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.cardColor,
+              color: AppColors.darkCard,
               border: Border(
                   top: BorderSide(
-                      color: AppTheme.textSecondary.withOpacity(0.2))),
+                      color: AppColors.darkTextSecondary.withOpacity(0.2))),
             ),
             padding: EdgeInsets.only(
               left: 16,
@@ -200,7 +200,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                 // Avatar
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: AppColors.primary,
                   child: Text(
                     authUser?.username[0].toUpperCase() ?? '?',
                     style: const TextStyle(
@@ -220,17 +220,17 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                     minLines: 1,
                     maxLength: 500,
                     style: const TextStyle(
-                        color: AppTheme.textPrimary, fontSize: 14),
+                        color: AppColors.darkTextPrimary, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'کامنت بنویس...',
                       hintStyle: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 14),
+                          color: AppColors.darkTextSecondary, fontSize: 14),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: AppTheme.surfaceColor,
+                      fillColor: AppColors.darkSurface,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
                       counterText: '',
@@ -248,8 +248,8 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                     height: 40,
                     decoration: BoxDecoration(
                       color: _sending
-                          ? AppTheme.textSecondary
-                          : AppTheme.primaryColor,
+                          ? AppColors.darkTextSecondary
+                          : AppColors.primary,
                       shape: BoxShape.circle,
                     ),
                     child: _sending
@@ -294,7 +294,7 @@ class _CommentItem extends StatelessWidget {
           onTap: onUserTap,
           child: CircleAvatar(
             radius: 18,
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: AppColors.primary,
             child: Text(
               comment.user.username[0].toUpperCase(),
               style: const TextStyle(
@@ -318,7 +318,7 @@ class _CommentItem extends StatelessWidget {
                     child: Text(
                       comment.user.username,
                       style: const TextStyle(
-                        color: AppTheme.primaryColor,
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -328,14 +328,14 @@ class _CommentItem extends StatelessWidget {
                   Text(
                     timeago.format(comment.createdAt, locale: 'fa'),
                     style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 11),
+                        color: AppColors.darkTextSecondary, fontSize: 11),
                   ),
                   if (isOwner) ...[
                     const Spacer(),
                     GestureDetector(
                       onTap: () => _showDeleteDialog(context),
                       child: const Icon(Icons.delete_outline_rounded,
-                          color: AppTheme.textSecondary, size: 16),
+                          color: AppColors.darkTextSecondary, size: 16),
                     ),
                   ],
                 ],
@@ -345,7 +345,7 @@ class _CommentItem extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardColor,
+                  color: AppColors.darkCard,
                   borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(4),
                     topLeft: Radius.circular(16),
@@ -356,7 +356,7 @@ class _CommentItem extends StatelessWidget {
                 child: Text(
                   comment.content,
                   style: const TextStyle(
-                      color: AppTheme.textPrimary, fontSize: 14),
+                      color: AppColors.darkTextPrimary, fontSize: 14),
                 ),
               ),
             ],
@@ -370,16 +370,16 @@ class _CommentItem extends StatelessWidget {
     showAdaptiveDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppColors.darkSurface,
         title: const Text('حذف کامنت',
-            style: TextStyle(color: AppTheme.textPrimary)),
+            style: TextStyle(color: AppColors.darkTextPrimary)),
         content: const Text('مطمئنی؟',
-            style: TextStyle(color: AppTheme.textSecondary)),
+            style: TextStyle(color: AppColors.darkTextSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('انصراف',
-                style: TextStyle(color: AppTheme.textSecondary)),
+                style: TextStyle(color: AppColors.darkTextSecondary)),
           ),
           TextButton(
             onPressed: () {

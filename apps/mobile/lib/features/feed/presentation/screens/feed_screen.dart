@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/feed_provider.dart';
 import '../widgets/track_card.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../../features/player/presentation/providers/player_provider.dart';
 import '../../../../features/player/data/player_models.dart';
 import '../../../../features/player/presentation/widgets/mini_player.dart';
@@ -17,20 +19,7 @@ class FeedScreen extends ConsumerWidget {
     final feedAsync = ref.watch(feedProvider(feedType));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.music_note_rounded, color: AppTheme.primaryColor),
-            SizedBox(width: 8),
-            Text('موزیک'),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: _FeedTypeTabs(feedType: feedType, ref: ref),
-        ),
-      ),
+      appBar: _FeedAppBar(feedType: feedType, ref: ref),
       body: Column(
         children: [
           Expanded(
@@ -60,11 +49,11 @@ class FeedScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.music_off_rounded,
-                              color: AppTheme.textSecondary, size: 64),
+                              color: AppColors.darkTextSecondary, size: 64),
                           SizedBox(height: 16),
                           Text('هنوز آهنگی نیست',
                               style:
-                                  TextStyle(color: AppTheme.textSecondary)),
+                                  TextStyle(color: AppColors.darkTextSecondary)),
                         ],
                       ),
                     )
@@ -167,7 +156,7 @@ class _Tab extends StatelessWidget {
             border: Border(
               bottom: BorderSide(
                 color: isActive
-                    ? AppTheme.primaryColor
+                    ? AppColors.primary
                     : Colors.transparent,
                 width: 2,
               ),
@@ -178,13 +167,317 @@ class _Tab extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: isActive
-                  ? AppTheme.primaryColor
-                  : AppTheme.textSecondary,
+                  ? AppColors.primary
+                  : AppColors.darkTextSecondary,
               fontWeight:
                   isActive ? FontWeight.w600 : FontWeight.normal,
               fontSize: 13,
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FeedAppBar extends ConsumerWidget implements PreferredSizeWidget {
+  final FeedType feedType;
+  final WidgetRef ref;
+
+  const _FeedAppBar({required this.feedType, required this.ref});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(96);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = ref.watch(themeModeProvider);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkBg : AppColors.lightBg,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Row اصلی
+            SizedBox(
+              height: 48,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  children: [
+                    // منو همبرگری — سمت راست
+                    _HamburgerMenu(),
+
+                    // عنوان — وسط
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  AppColors.primaryLight,
+                                  AppColors.primaryDark
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.4),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.music_note_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'موزیک',
+                            style: TextStyle(
+                              fontFamily: 'Vazirmatn',
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // آیکن تم — سمت چپ
+                    IconButton(
+                      onPressed: () {
+                        ref.read(themeModeProvider.notifier).state =
+                            themeMode == ThemeMode.dark
+                                ? ThemeMode.light
+                                : ThemeMode.dark;
+                      },
+                      icon: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, anim) =>
+                            RotationTransition(
+                          turns: anim,
+                          child: FadeTransition(opacity: anim, child: child),
+                        ),
+                        child: Icon(
+                          themeMode == ThemeMode.dark
+                              ? Icons.light_mode_rounded
+                              : Icons.dark_mode_rounded,
+                          key: ValueKey(themeMode),
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Tabs
+            _FeedTypeTabs(feedType: feedType, ref: ref),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HamburgerMenu extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return IconButton(
+      onPressed: () => _showMenu(context),
+      icon: Icon(
+        Icons.menu_rounded,
+        color: isDark
+            ? AppColors.darkTextSecondary
+            : AppColors.lightTextSecondary,
+        size: 22,
+      ),
+    );
+  }
+
+  void _showMenu(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.darkCard : AppColors.lightSurface;
+    final textColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final subColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: subColor.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+
+                // عنوان منو
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        'منو',
+                        style: TextStyle(
+                          fontFamily: 'Vazirmatn',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Divider(height: 1),
+                const SizedBox(height: 8),
+
+                // تماس با ما
+                _MenuItem(
+                  icon: Icons.support_agent_rounded,
+                  label: 'تماس با ما',
+                  color: AppColors.accentBlue,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showContactDialog(context);
+                  },
+                ),
+
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showContactDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor:
+            isDark ? AppColors.darkCard : AppColors.lightSurface,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'تماس با ما',
+          style: TextStyle(
+              fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700),
+          textAlign: TextAlign.right,
+        ),
+        content: const Text(
+          'برای ارتباط با تیم پشتیبانی:\n\nایمیل: support@musicapp.ir\nتلگرام: @musicapp_support',
+          style: TextStyle(fontFamily: 'Vazirmatn', height: 1.8),
+          textAlign: TextAlign.right,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('بستن',
+                style: TextStyle(fontFamily: 'Vazirmatn')),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _MenuItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Vazirmatn',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
+            ),
+          ],
         ),
       ),
     );

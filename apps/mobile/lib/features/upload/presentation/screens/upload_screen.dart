@@ -171,7 +171,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
         uploadState.status == UploadStatus.processing;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
         title: const Text('افزودن آهنگ'),
         leading: IconButton(
@@ -196,11 +196,11 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
       case UploadStatus.uploading:
         message = 'در حال ارسال به سرور...';
         icon = Icons.cloud_upload_rounded;
-        color = AppTheme.primaryColor;
+        color = AppColors.primary;
       case UploadStatus.uploading:
         message = 'در حال آپلود آهنگ...';
         icon = Icons.cloud_upload_rounded;
-        color = AppTheme.primaryColor;
+        color = AppColors.primary;
       case UploadStatus.processing:
         message = 'در حال پردازش صوت...';
         icon = Icons.equalizer_rounded;
@@ -208,7 +208,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
       default:
         message = 'لطفاً صبر کنید...';
         icon = Icons.hourglass_top_rounded;
-        color = AppTheme.textSecondary;
+        color = AppColors.darkTextSecondary;
     }
 
     return Center(
@@ -230,7 +230,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
             Text(
               message,
               style: const TextStyle(
-                color: AppTheme.textPrimary,
+                color: AppColors.darkTextPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -242,7 +242,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                 value: state.status == UploadStatus.processing
                     ? null
                     : state.progress,
-                backgroundColor: AppTheme.surfaceColor,
+                backgroundColor: AppColors.darkSurface,
                 valueColor: AlwaysStoppedAnimation<Color>(color),
                 minHeight: 8,
               ),
@@ -281,7 +281,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
             const Text(
               'خطا در آپلود',
               style: TextStyle(
-                color: AppTheme.textPrimary,
+                color: AppColors.darkTextPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -289,7 +289,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
             const SizedBox(height: 8),
             Text(
               state.error ?? 'خطای ناشناخته',
-              style: const TextStyle(color: AppTheme.textSecondary),
+              style: const TextStyle(color: AppColors.darkTextSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -313,19 +313,19 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
           // Tab انتخاب روش
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
+              color: AppColors.darkSurface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: TabBar(
               controller: _tabController,
               indicator: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(10),
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               labelColor: Colors.white,
-              unselectedLabelColor: AppTheme.textSecondary,
+              unselectedLabelColor: AppColors.darkTextSecondary,
               tabs: const [
                 Tab(
                   child: Row(
@@ -378,7 +378,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
           const SizedBox(height: 10),
           TextField(
             controller: _titleController,
-            style: const TextStyle(color: AppTheme.textPrimary),
+            style: const TextStyle(color: AppColors.darkTextPrimary),
             decoration: _inputDecoration(
               hint: 'مثال: دلتنگی',
               icon: Icons.music_note_rounded,
@@ -405,7 +405,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
             controller: _descController,
             maxLines: 3,
             maxLength: 500,
-            style: const TextStyle(color: AppTheme.textPrimary),
+            style: const TextStyle(color: AppColors.darkTextPrimary),
             decoration: _inputDecoration(
               hint: 'درباره این آهنگ بنویس...',
               icon: Icons.notes_rounded,
@@ -426,7 +426,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
             child: ElevatedButton.icon(
               onPressed: _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -449,12 +449,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
       onTap: _pickAudioFile,
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: AppColors.darkSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _audioFilePath != null
-                ? AppTheme.primaryColor
-                : AppTheme.textSecondary.withOpacity(0.3),
+                ? AppColors.primary
+                : AppColors.darkTextSecondary.withOpacity(0.3),
             width: _audioFilePath != null ? 2 : 1,
           ),
         ),
@@ -463,17 +463,17 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.audio_file_rounded,
-                      color: AppTheme.primaryColor, size: 36),
+                      color: AppColors.primary, size: 36),
                   SizedBox(height: 8),
                   Text(
                     'برای انتخاب فایل کلیک کنید',
-                    style: TextStyle(color: AppTheme.textSecondary),
+                    style: TextStyle(color: AppColors.darkTextSecondary),
                   ),
                   SizedBox(height: 4),
                   Text(
                     'MP3 • WAV • FLAC • AAC • OGG',
                     style: TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 11),
+                        color: AppColors.darkTextSecondary, fontSize: 11),
                   ),
                 ],
               )
@@ -484,11 +484,11 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.2),
+                      color: AppColors.primary.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.audio_file_rounded,
-                        color: AppTheme.primaryColor),
+                        color: AppColors.primary),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -499,7 +499,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                         Text(
                           _audioFileName ?? '',
                           style: const TextStyle(
-                            color: AppTheme.textPrimary,
+                            color: AppColors.darkTextPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -514,7 +514,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded,
-                        color: AppTheme.textSecondary),
+                        color: AppColors.darkTextSecondary),
                     onPressed: () =>
                         setState(() => _audioFilePath = null),
                   ),
@@ -529,7 +529,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
       children: [
         TextField(
           controller: _urlController,
-          style: const TextStyle(color: AppTheme.textPrimary),
+          style: const TextStyle(color: AppColors.darkTextPrimary),
           decoration: _inputDecoration(
             hint: 'https://example.com/song.mp3',
             icon: Icons.link_rounded,
@@ -539,12 +539,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
         const Row(
           children: [
             Icon(Icons.info_outline_rounded,
-                color: AppTheme.textSecondary, size: 14),
+                color: AppColors.darkTextSecondary, size: 14),
             SizedBox(width: 6),
             Text(
               'فایل به صورت خودکار دانلود و آپلود می‌شود',
               style:
-                  TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                  TextStyle(color: AppColors.darkTextSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -558,12 +558,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
       child: Container(
         height: 80,
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: AppColors.darkSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _coverPath != null
-                ? AppTheme.primaryColor
-                : AppTheme.textSecondary.withOpacity(0.3),
+                ? AppColors.primary
+                : AppColors.darkTextSecondary.withOpacity(0.3),
           ),
         ),
         child: _coverPath == null
@@ -571,10 +571,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.add_photo_alternate_rounded,
-                      color: AppTheme.primaryColor, size: 28),
+                      color: AppColors.primary, size: 28),
                   SizedBox(width: 10),
                   Text('انتخاب تصویر کاور',
-                      style: TextStyle(color: AppTheme.textSecondary)),
+                      style: TextStyle(color: AppColors.darkTextSecondary)),
                 ],
               )
             : Row(
@@ -596,7 +596,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded,
-                        color: AppTheme.textSecondary),
+                        color: AppColors.darkTextSecondary),
                     onPressed: () => setState(() => _coverPath = null),
                   ),
                 ],
@@ -615,7 +615,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
       children: [
         TextField(
           controller: _artistController,
-          style: const TextStyle(color: AppTheme.textPrimary),
+          style: const TextStyle(color: AppColors.darkTextPrimary),
           decoration: _inputDecoration(
             hint: 'نام خواننده را وارد کنید',
             icon: Icons.person_rounded,
@@ -629,7 +629,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                 : Container(
                     margin: const EdgeInsets.only(top: 4),
                     decoration: BoxDecoration(
-                      color: AppTheme.cardColor,
+                      color: AppColors.darkCard,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -638,7 +638,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                                 dense: true,
                                 leading: CircleAvatar(
                                   radius: 16,
-                                  backgroundColor: AppTheme.primaryColor,
+                                  backgroundColor: AppColors.primary,
                                   child: Text(
                                     (user['username'] as String)[0]
                                         .toUpperCase(),
@@ -650,7 +650,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                                 title: Text(
                                   user['username'] as String,
                                   style: const TextStyle(
-                                      color: AppTheme.textPrimary,
+                                      color: AppColors.darkTextPrimary,
                                       fontSize: 14),
                                 ),
                                 onTap: () {
@@ -689,7 +689,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                       label: Text(tag,
                           style: const TextStyle(
                               color: Colors.white, fontSize: 12)),
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: AppColors.primary,
                       deleteIcon: const Icon(Icons.close_rounded,
                           size: 14, color: Colors.white),
                       onDeleted: () => _removeTag(tag),
@@ -705,7 +705,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
         // input تگ
         TextField(
           controller: _tagInputController,
-          style: const TextStyle(color: AppTheme.textPrimary),
+          style: const TextStyle(color: AppColors.darkTextPrimary),
           decoration: _inputDecoration(
             hint: 'تگ بنویسید و Enter بزنید',
             icon: Icons.tag_rounded,
@@ -722,7 +722,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                     margin: const EdgeInsets.only(top: 4),
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppTheme.cardColor,
+                      color: AppColors.darkCard,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Wrap(
@@ -735,16 +735,16 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.surfaceColor,
+                                    color: AppColors.darkSurface,
                                     borderRadius:
                                         BorderRadius.circular(8),
                                     border: Border.all(
-                                        color: AppTheme.primaryColor
+                                        color: AppColors.primary
                                             .withOpacity(0.5)),
                                   ),
                                   child: Text(tag,
                                       style: const TextStyle(
-                                          color: AppTheme.primaryColor,
+                                          color: AppColors.primary,
                                           fontSize: 12)),
                                 ),
                               ))
@@ -786,7 +786,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
         Text(
           title,
           style: const TextStyle(
-            color: AppTheme.textPrimary,
+            color: AppColors.darkTextPrimary,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -796,7 +796,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
           const Text(
             '(اختیاری)',
             style:
-                TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                TextStyle(color: AppColors.darkTextSecondary, fontSize: 12),
           ),
         ],
       ],
@@ -807,10 +807,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
       {required String hint, required IconData icon}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppTheme.textSecondary),
-      prefixIcon: Icon(icon, color: AppTheme.textSecondary, size: 20),
+      hintStyle: const TextStyle(color: AppColors.darkTextSecondary),
+      prefixIcon: Icon(icon, color: AppColors.darkTextSecondary, size: 20),
       filled: true,
-      fillColor: AppTheme.surfaceColor,
+      fillColor: AppColors.darkSurface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -818,14 +818,14 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide:
-            BorderSide(color: AppTheme.textSecondary.withOpacity(0.2)),
+            BorderSide(color: AppColors.darkTextSecondary.withOpacity(0.2)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppTheme.primaryColor),
+        borderSide: const BorderSide(color: AppColors.primary),
       ),
       counterStyle:
-          const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+          const TextStyle(color: AppColors.darkTextSecondary, fontSize: 11),
     );
   }
 }
@@ -855,13 +855,13 @@ class _VisibilityOption extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppTheme.primaryColor.withOpacity(0.15)
-                : AppTheme.surfaceColor,
+                ? AppColors.primary.withOpacity(0.15)
+                : AppColors.darkSurface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? AppTheme.primaryColor
-                  : AppTheme.textSecondary.withOpacity(0.2),
+                  ? AppColors.primary
+                  : AppColors.darkTextSecondary.withOpacity(0.2),
             ),
           ),
           child: Row(
@@ -869,16 +869,16 @@ class _VisibilityOption extends StatelessWidget {
             children: [
               Icon(icon,
                   color: isSelected
-                      ? AppTheme.primaryColor
-                      : AppTheme.textSecondary,
+                      ? AppColors.primary
+                      : AppColors.darkTextSecondary,
                   size: 18),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
                   color: isSelected
-                      ? AppTheme.primaryColor
-                      : AppTheme.textSecondary,
+                      ? AppColors.primary
+                      : AppColors.darkTextSecondary,
                   fontWeight: isSelected
                       ? FontWeight.w600
                       : FontWeight.normal,

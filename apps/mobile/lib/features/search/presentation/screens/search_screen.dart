@@ -84,7 +84,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (e, _) => Center(
                       child: Text('خطا: $e',
-                          style: const TextStyle(color: AppTheme.textSecondary)),
+                          style: const TextStyle(color: AppColors.darkTextSecondary)),
                     ),
                     data: (result) {
                       if (result.tracks.isEmpty && result.users.isEmpty) {
@@ -93,11 +93,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(Icons.search_off_rounded,
-                                  color: AppTheme.textSecondary, size: 64),
+                                  color: AppColors.darkTextSecondary, size: 64),
                               const SizedBox(height: 16),
                               Text(
                                 'نتیجه‌ای برای "$_submittedQuery" پیدا نشد',
-                                style: const TextStyle(color: AppTheme.textSecondary),
+                                style: const TextStyle(color: AppColors.darkTextSecondary),
                               ),
                             ],
                           ),
@@ -111,41 +111,41 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               child: Text('کاربران',
                                   style: TextStyle(
-                                      color: AppTheme.textPrimary,
+                                      color: AppColors.darkTextPrimary,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600)),
                             ),
                             ...result.users.map((user) => ListTile(
                                   leading: CircleAvatar(
-                                    backgroundColor: AppTheme.primaryColor,
+                                    backgroundColor: AppColors.primary,
                                     child: Text(user.username[0].toUpperCase(),
                                         style: const TextStyle(color: Colors.white)),
                                   ),
                                   title: Row(children: [
                                     Text(user.username,
-                                        style: const TextStyle(color: AppTheme.textPrimary)),
+                                        style: const TextStyle(color: AppColors.darkTextPrimary)),
                                     if (user.verifiedStatus == 'verified') ...[
                                       const SizedBox(width: 4),
                                       const Icon(Icons.verified_rounded,
-                                          color: AppTheme.primaryColor, size: 16),
+                                          color: AppColors.primary, size: 16),
                                     ],
                                   ]),
                                   subtitle: user.bio != null
                                       ? Text(user.bio!,
                                           style: const TextStyle(
-                                              color: AppTheme.textSecondary, fontSize: 12),
+                                              color: AppColors.darkTextSecondary, fontSize: 12),
                                           overflow: TextOverflow.ellipsis)
                                       : null,
                                   onTap: () => context.push('/profile/${user.username}'),
                                 )),
-                            const Divider(color: AppTheme.surfaceColor),
+                            const Divider(color: AppColors.darkSurface),
                           ],
                           if (result.tracks.isNotEmpty) ...[
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               child: Text('آهنگ‌ها',
                                   style: TextStyle(
-                                      color: AppTheme.textPrimary,
+                                      color: AppColors.darkTextPrimary,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600)),
                             ),
@@ -154,26 +154,26 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                     width: 48,
                                     height: 48,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.surfaceColor,
+                                      color: AppColors.darkSurface,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(Icons.music_note_rounded,
-                                        color: AppTheme.primaryColor),
+                                        color: AppColors.primary),
                                   ),
                                   title: Text(track.title,
-                                      style: const TextStyle(color: AppTheme.textPrimary)),
+                                      style: const TextStyle(color: AppColors.darkTextPrimary)),
                                   subtitle: Text(track.username,
                                       style: const TextStyle(
-                                          color: AppTheme.textSecondary, fontSize: 12)),
+                                          color: AppColors.darkTextSecondary, fontSize: 12)),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const Icon(Icons.favorite_outline,
-                                          size: 14, color: AppTheme.textSecondary),
+                                          size: 14, color: AppColors.darkTextSecondary),
                                       const SizedBox(width: 4),
                                       Text('${track.likesCount}',
                                           style: const TextStyle(
-                                              color: AppTheme.textSecondary, fontSize: 12)),
+                                              color: AppColors.darkTextSecondary, fontSize: 12)),
                                     ],
                                   ),
                                   onTap: () {
@@ -229,13 +229,13 @@ class _TypeChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? AppTheme.primaryColor : AppTheme.surfaceColor,
+          color: isActive ? AppColors.primary : AppColors.darkSurface,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isActive ? Colors.white : AppTheme.textSecondary,
+            color: isActive ? Colors.white : AppColors.darkTextSecondary,
             fontSize: 13,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
@@ -254,13 +254,13 @@ class _EmptySearch extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_rounded, color: AppTheme.textSecondary, size: 64),
+          Icon(Icons.search_rounded, color: AppColors.darkTextSecondary, size: 64),
           SizedBox(height: 16),
           Text('دنبال چی می‌گردی؟',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
+              style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 16)),
           SizedBox(height: 8),
           Text('آهنگ یا کاربر رو جستجو کن',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+              style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 13)),
         ],
       ),
     );

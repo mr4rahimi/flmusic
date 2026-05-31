@@ -49,7 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 8),
               const Text(
                 'وارد حسابت بشو',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+                style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 16),
               ),
               const SizedBox(height: 40),
               TextField(
@@ -86,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: () => context.go('/register'),
                   child: const Text(
                     'حساب نداری؟ ثبت‌نام کن',
-                    style: TextStyle(color: AppTheme.primaryColor),
+                    style: TextStyle(color: AppColors.primary),
                   ),
                 ),
               ),

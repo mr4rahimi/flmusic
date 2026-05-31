@@ -25,7 +25,7 @@ class NotificationsScreen extends ConsumerWidget {
                         .markAllAsRead(),
                     child: const Text(
                       'همه خوانده شد',
-                      style: TextStyle(color: AppTheme.primaryColor),
+                      style: TextStyle(color: AppColors.primary),
                     ),
                   )
                 : const SizedBox.shrink(),
@@ -58,11 +58,11 @@ class NotificationsScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.notifications_none_rounded,
-                        color: AppTheme.textSecondary, size: 64),
+                        color: AppColors.darkTextSecondary, size: 64),
                     SizedBox(height: 16),
                     Text(
                       'اعلانی نداری',
-                      style: TextStyle(color: AppTheme.textSecondary),
+                      style: TextStyle(color: AppColors.darkTextSecondary),
                     ),
                   ],
                 ),
@@ -73,7 +73,7 @@ class NotificationsScreen extends ConsumerWidget {
                 child: ListView.separated(
                   itemCount: data.data.length,
                   separatorBuilder: (_, __) => const Divider(
-                    color: AppTheme.surfaceColor,
+                    color: AppColors.darkSurface,
                     height: 1,
                   ),
                   itemBuilder: (_, i) => _NotificationItem(
@@ -120,15 +120,15 @@ class _NotificationItem extends StatelessWidget {
   Color get _iconColor {
     switch (notif.type) {
       case 'follow':
-        return AppTheme.primaryColor;
+        return AppColors.primary;
       case 'like':
-        return AppTheme.accentColor;
+        return AppColors.accent;
       case 'comment':
         return Colors.amber;
       case 'repost':
         return Colors.greenAccent;
       default:
-        return AppTheme.textSecondary;
+        return AppColors.darkTextSecondary;
     }
   }
 
@@ -154,7 +154,7 @@ class _NotificationItem extends StatelessWidget {
       child: Container(
         color: notif.isRead
             ? Colors.transparent
-            : AppTheme.primaryColor.withOpacity(0.05),
+            : AppColors.primary.withOpacity(0.05),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
@@ -163,11 +163,11 @@ class _NotificationItem extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: AppTheme.surfaceColor,
+                  backgroundColor: AppColors.darkSurface,
                   child: Text(
                     notif.actor.username[0].toUpperCase(),
                     style: const TextStyle(
-                      color: AppTheme.textPrimary,
+                      color: AppColors.darkTextPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -181,7 +181,7 @@ class _NotificationItem extends StatelessWidget {
                       color: _iconColor,
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: AppTheme.backgroundColor, width: 1.5),
+                          color: AppColors.darkBg, width: 1.5),
                     ),
                     child: Icon(_icon, size: 10, color: Colors.white),
                   ),
@@ -201,7 +201,7 @@ class _NotificationItem extends StatelessWidget {
                         TextSpan(
                           text: notif.actor.username,
                           style: const TextStyle(
-                            color: AppTheme.textPrimary,
+                            color: AppColors.darkTextPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
@@ -210,7 +210,7 @@ class _NotificationItem extends StatelessWidget {
                         TextSpan(
                           text: _message,
                           style: const TextStyle(
-                            color: AppTheme.textSecondary,
+                            color: AppColors.darkTextSecondary,
                             fontSize: 14,
                           ),
                         ),
@@ -221,7 +221,7 @@ class _NotificationItem extends StatelessWidget {
                   Text(
                     timeago.format(notif.createdAt, locale: 'fa'),
                     style: const TextStyle(
-                      color: AppTheme.textSecondary,
+                      color: AppColors.darkTextSecondary,
                       fontSize: 12,
                     ),
                   ),
@@ -235,7 +235,7 @@ class _NotificationItem extends StatelessWidget {
                 width: 8,
                 height: 8,
                 decoration: const BoxDecoration(
-                  color: AppTheme.primaryColor,
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
               ),

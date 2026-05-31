@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: music_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: music_user
+      POSTGRES_PASSWORD: CHANGE_THIS_STRONG_PASSWORD
+      POSTGRES_DB: music_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - music_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: music_redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - music_net
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: music_meilisearch
+    restart: always
+    environment:
+      MEILI_MASTER_KEY: CHANGE_THIS_STRONG_MASTER_KEY
+      MEILI_ENV: production
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - music_net
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: music_api
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./apps/api/.env.production
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - postgres
+      - redis
+      - meilisearch
+    networks:
+      - music_net
+
+volumes:
+  postgres_data:
+  redis_data:
+  meilisearch_data:
+  uploads_data:
+
+networks:
+  music_net:
+    driver: bridge

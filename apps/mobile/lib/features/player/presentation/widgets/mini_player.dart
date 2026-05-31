@@ -26,7 +26,7 @@ class MiniPlayer extends ConsumerWidget {
         height: 64,
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: AppTheme.cardColor,
+          color: AppColors.darkCard,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8),
@@ -39,11 +39,11 @@ class MiniPlayer extends ConsumerWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.2),
+                color: AppColors.primary.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.music_note_rounded,
-                  color: AppTheme.primaryColor, size: 20),
+                  color: AppColors.primary, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -54,14 +54,14 @@ class MiniPlayer extends ConsumerWidget {
                   Text(
                     track.title,
                     style: const TextStyle(
-                        color: AppTheme.textPrimary,
+                        color: AppColors.darkTextPrimary,
                         fontWeight: FontWeight.w600,
                         fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(track.username,
                       style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 12)),
+                          color: AppColors.darkTextSecondary, fontSize: 12)),
                 ],
               ),
             ),
@@ -72,7 +72,7 @@ class MiniPlayer extends ConsumerWidget {
                 return IconButton(
                   icon: Icon(
                     isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: AppTheme.textPrimary,
+                    color: AppColors.darkTextPrimary,
                     size: 28,
                   ),
                   onPressed: () =>

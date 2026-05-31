@@ -88,60 +88,205 @@ class MainShell extends ConsumerWidget {
 
     return Scaffold(
       body: child,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/upload'),
-        backgroundColor: AppTheme.primaryColor,
-        elevation: 4,
-        shape: const CircleBorder(),
+      floatingActionButton: _UploadFAB(onTap: () => context.push('/upload')),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: _BottomNav(
+        index: index,
+        unreadCount: unreadAsync.value ?? 0,
+        onTap: (i) {
+          switch (i) {
+            case 0: context.go('/feed');
+            case 1: context.go('/search');
+            case 2: context.go('/notifications');
+            case 3:
+              if (authUser != null) {
+                context.go('/profile/${authUser.username}');
+              }
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _UploadFAB extends StatefulWidget {
+  final VoidCallback onTap;
+  const _UploadFAB({required this.onTap});
+
+  @override
+  State<_UploadFAB> createState() => _UploadFABState();
+}
+
+class _UploadFABState extends State<_UploadFAB> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const depth = 4.0;
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 80),
+        width: 56,
+        height: 56,
+        transform: Matrix4.translationValues(0, _pressed ? depth : 0, 0),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primaryLight, AppColors.primaryDark],
+          ),
+          boxShadow: _pressed
+              ? []
+              : [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.6),
+                    offset: const Offset(0, depth),
+                    blurRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    offset: const Offset(0, depth + 6),
+                    blurRadius: 12,
+                  ),
+                ],
+        ),
         child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
       ),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        color: AppTheme.surfaceColor,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+    );
+  }
+}
+
+class _BottomNav extends StatelessWidget {
+  final int index;
+  final int unreadCount;
+  final void Function(int) onTap;
+
+  const _BottomNav({
+    required this.index,
+    required this.unreadCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final shadow = isDark
+        ? Colors.black.withOpacity(0.3)
+        : Colors.black.withOpacity(0.08);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        boxShadow: [
+          BoxShadow(color: shadow, blurRadius: 20, offset: const Offset(0, -4)),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavBtn(
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home_rounded,
+                label: 'فید',
+                isActive: index == 0,
+                onTap: () => onTap(0),
+              ),
+              _NavBtn(
+                icon: Icons.search_outlined,
+                activeIcon: Icons.search_rounded,
+                label: 'جستجو',
+                isActive: index == 1,
+                onTap: () => onTap(1),
+              ),
+              const SizedBox(width: 56), // فضای FAB
+              _NavBtnBadge(
+                icon: Icons.notifications_outlined,
+                activeIcon: Icons.notifications_rounded,
+                label: 'اعلان',
+                isActive: index == 2,
+                badge: unreadCount,
+                onTap: () => onTap(2),
+              ),
+              _NavBtn(
+                icon: Icons.person_outline_rounded,
+                activeIcon: Icons.person_rounded,
+                label: 'پروفایل',
+                isActive: index == 3,
+                onTap: () => onTap(3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavBtn extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _NavBtn({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inactiveColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // فید
-            _NavItem(
-              icon: Icons.home_outlined,
-              activeIcon: Icons.home_rounded,
-              label: 'فید',
-              isActive: index == 0,
-              onTap: () => context.go('/feed'),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? AppColors.primary.withOpacity(0.15)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                isActive ? activeIcon : icon,
+                color: isActive ? AppColors.primary : inactiveColor,
+                size: 22,
+              ),
             ),
-            // جستجو
-            _NavItem(
-              icon: Icons.search_outlined,
-              activeIcon: Icons.search_rounded,
-              label: 'جستجو',
-              isActive: index == 1,
-              onTap: () => context.go('/search'),
-            ),
-            // فاصله برای FAB
-            const SizedBox(width: 56),
-            // اعلان‌ها
-            _NavItemWithBadge(
-              icon: Icons.notifications_outlined,
-              activeIcon: Icons.notifications_rounded,
-              label: 'اعلان‌ها',
-              isActive: index == 2,
-              badgeCount: unreadAsync.value ?? 0,
-              onTap: () => context.go('/notifications'),
-            ),
-            // پروفایل
-            _NavItem(
-              icon: Icons.person_outline_rounded,
-              activeIcon: Icons.person_rounded,
-              label: 'پروفایل',
-              isActive: index == 3,
-              onTap: () {
-                if (authUser != null) {
-                  context.go('/profile/${authUser.username}');
-                }
-              },
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Vazirmatn',
+                fontSize: 10,
+                color: isActive ? AppColors.primary : inactiveColor,
+                fontWeight:
+                    isActive ? FontWeight.w600 : FontWeight.w400,
+              ),
             ),
           ],
         ),
@@ -150,115 +295,75 @@ class MainShell extends ConsumerWidget {
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _NavBtnBadge extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
   final String label;
   final bool isActive;
+  final int badge;
   final VoidCallback onTap;
 
-  const _NavItem({
+  const _NavBtnBadge({
     required this.icon,
     required this.activeIcon,
     required this.label,
     required this.isActive,
+    required this.badge,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inactiveColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
     return Expanded(
-      child: InkWell(
+      child: GestureDetector(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isActive ? activeIcon : icon,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
                 color: isActive
-                    ? AppTheme.primaryColor
-                    : AppTheme.textSecondary,
-                size: 24,
+                    ? AppColors.primary.withOpacity(0.15)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isActive
-                      ? AppTheme.primaryColor
-                      : AppTheme.textSecondary,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItemWithBadge extends StatelessWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final bool isActive;
-  final int badgeCount;
-  final VoidCallback onTap;
-
-  const _NavItemWithBadge({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.isActive,
-    required this.badgeCount,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              badgeCount > 0
+              child: badge > 0
                   ? Badge(
-                      label: Text('$badgeCount'),
+                      label: Text('$badge',
+                          style: const TextStyle(
+                              fontSize: 9, fontWeight: FontWeight.w700)),
+                      backgroundColor: AppColors.accent,
                       child: Icon(
                         isActive ? activeIcon : icon,
-                        color: isActive
-                            ? AppTheme.primaryColor
-                            : AppTheme.textSecondary,
-                        size: 24,
+                        color: isActive ? AppColors.primary : inactiveColor,
+                        size: 22,
                       ),
                     )
                   : Icon(
                       isActive ? activeIcon : icon,
-                      color: isActive
-                          ? AppTheme.primaryColor
-                          : AppTheme.textSecondary,
-                      size: 24,
+                      color: isActive ? AppColors.primary : inactiveColor,
+                      size: 22,
                     ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isActive
-                      ? AppTheme.primaryColor
-                      : AppTheme.textSecondary,
-                  fontSize: 10,
-                ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Vazirmatn',
+                fontSize: 10,
+                color: isActive ? AppColors.primary : inactiveColor,
+                fontWeight:
+                    isActive ? FontWeight.w600 : FontWeight.w400,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

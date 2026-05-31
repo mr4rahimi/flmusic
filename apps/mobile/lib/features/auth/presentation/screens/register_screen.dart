@@ -51,7 +51,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const SizedBox(height: 8),
               const Text(
                 'یه حساب جدید بساز',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+                style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 16),
               ),
               const SizedBox(height: 40),
               TextField(
@@ -96,7 +96,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   onPressed: () => context.go('/login'),
                   child: const Text(
                     'حساب داری؟ وارد شو',
-                    style: TextStyle(color: AppTheme.primaryColor),
+                    style: TextStyle(color: AppColors.primary),
                   ),
                 ),
               ),

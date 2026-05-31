@@ -3,6 +3,7 @@ import '../../../../core/api/api_client.dart';
 
 final likeStatusProvider =
     StateNotifierProvider.family<LikeNotifier, bool?, String>((ref, trackId) {
+  ref.keepAlive();
   return LikeNotifier(ref, trackId);
 });
 
@@ -26,6 +27,7 @@ class LikeNotifier extends StateNotifier<bool?> {
 
   Future<void> toggle() async {
     final current = state ?? false;
+    // optimistic update
     state = !current;
     try {
       final dio = _ref.read(dioProvider);
@@ -35,10 +37,14 @@ class LikeNotifier extends StateNotifier<bool?> {
         await dio.post('/tracks/$_trackId/like');
       }
     } catch (_) {
+      // revert
       state = current;
     }
   }
 }
 
 final likesCountProvider =
-    StateProvider.family<int, String>((ref, trackId) => -1);
+    StateProvider.family<int, String>((ref, trackId) {
+  ref.keepAlive();
+  return -1;
+});
