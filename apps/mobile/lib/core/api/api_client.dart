@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../storage/secure_storage.dart';
 
 // آدرس سرور production رو اینجا بذار
-const String _productionUrl = 'https://api.flmusic.ir/api/v1';
+const String _productionUrl = 'http://185.164.73.224/api/v1';
 const String _devUrl = 'http://127.0.0.1:3000/api/v1';
 
 const String baseUrl = kReleaseMode ? _productionUrl : _devUrl;
