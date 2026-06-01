@@ -28,7 +28,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
       if (mounted) context.go('/feed');
     } catch (e) {
-      setState(() { _error = 'خطا در ثبت‌نام. لطفاً دوباره امتحان کن'; });
+      setState(() { _error = e.toString(); });
     } finally {
       setState(() { _loading = false; });
     }
