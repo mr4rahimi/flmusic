@@ -7,3 +7,7 @@ dist/
 .DS_Store
 .turbo/
 coverage/
+meilisearch
+*.zip
+apps/api/node_modules/
+apps/api/dist/
