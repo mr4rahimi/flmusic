@@ -149,6 +149,46 @@ Architecture is designed to scale gradually
 MVP focuses on speed of launch, not perfection
 📬 Contact
 
+
+#Example for build
+
+apt update
+apt install -y wget unzip zip openjdk-17-jdk curl
+
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt install -y nodejs
+
+cd ~
+wget https://storage.flutter-io.cn/flutter_infra_release/releases/stable/linux/flutter_linux_3.32.1-stable.tar.xz
+tar xf flutter_linux_3.32.1-stable.tar.xz
+echo 'export PATH="$HOME/flutter/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+git config --global --add safe.directory /root/flutter
+flutter --version
+
+mkdir -p ~/Android/Sdk/cmdline-tools
+wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+unzip commandlinetools-linux-11076708_latest.zip -d ~/Android/Sdk/cmdline-tools/
+mv ~/Android/Sdk/cmdline-tools/cmdline-tools ~/Android/Sdk/cmdline-tools/latest
+
+echo 'export ANDROID_SDK_ROOT=$HOME/Android/Sdk' >> ~/.bashrc
+echo 'export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools' >> ~/.bashrc
+source ~/.bashrc
+
+yes | sdkmanager --licenses
+sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+flutter config --android-sdk ~/Android/Sdk
+flutter doctor --android-licenses 2>/dev/null | tail -3
+
+git clone https://github.com/mr4rahimi/flmusic.git
+cd flmusic/apps/mobile
+flutter pub get
+
+flutter build apk --release --split-per-abi
+
+
+
 For collaboration or inquiries:
 📧 +989916352600 
 telegram or whatsapp
