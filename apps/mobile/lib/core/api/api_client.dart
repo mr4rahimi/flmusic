@@ -1,3 +1,4 @@
+import '../utils/debug_overlay.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
@@ -33,7 +34,8 @@ final dioProvider = Provider<Dio>((ref) {
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
-        handler.next(options);
+        DebugOverlay.log('REQ: \${options.method} \${options.baseUrl}\${options.path}');
+              handler.next(options);
       },
       onError: (error, handler) async {
         if (error.response?.statusCode == 401) {
