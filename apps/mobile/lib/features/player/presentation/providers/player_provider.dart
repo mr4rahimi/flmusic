@@ -187,5 +187,6 @@ class _Compat {
   Future<void> seek(Duration d) => _c.seek(d);
   Future<void> playNext() => _c.playNext();
   Future<void> playPrevious() => _c.playPrevious();
+  Future<void> playTrack(PlayerTrack t) => _c._playTrack(t);
   void cycleRepeatMode() => _c.cycleRepeatMode();
 }
