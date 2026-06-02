@@ -3,6 +3,7 @@ import '../../data/profile_models.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../features/feed/data/feed_models.dart';
 
+
 final profileProvider =
     FutureProvider.family<Profile, String>((ref, username) async {
   final dio = ref.read(dioProvider);

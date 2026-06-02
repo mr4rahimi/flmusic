@@ -111,9 +111,6 @@ class _FeedTypeTabs extends StatefulWidget {
 }
 
 class _FeedTypeTabsState extends State<_FeedTypeTabs> {
-  final List<GlobalKey> _keys = List.generate(3, (_) => GlobalKey());
-
-
   @override
   Widget build(BuildContext context) {
     final types = [
@@ -121,6 +118,7 @@ class _FeedTypeTabsState extends State<_FeedTypeTabs> {
       (FeedType.following, 'دنبال‌شده‌ها', Icons.headphones_rounded),
       (FeedType.newTracks, 'جدیدترین', Icons.access_time_rounded),
     ];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 9, 14, 12),
@@ -128,138 +126,77 @@ class _FeedTypeTabsState extends State<_FeedTypeTabs> {
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).brightness == Brightness.dark
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.07)
                 : Colors.black.withValues(alpha: 0.07),
           ),
         ),
       ),
-      child: Stack(
-        children: [
-          // pill
-          _AnimatedPill(
-            keys: _keys,
-            activeIndex: types.indexWhere((t) => t.$1 == widget.feedType),
-          ),
-          // tabs
-          Row(
-            children: types.asMap().entries.map((e) {
-              final i = e.key;
-              final (type, label, icon) = e.value;
-              final isActive = widget.feedType == type;
-              return Expanded(
-                child: GestureDetector(
-                  key: _keys[i],
-                  onTap: () =>
-                      widget.ref.read(feedTypeProvider.notifier).state = type,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 9),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          icon,
-                          size: 17,
-                          color: isActive
-                              ? Colors.white
-                              : Theme.of(context).brightness == Brightness.dark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontFamily: 'Vazirmatn',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: isActive
-                                ? Colors.white
-                                : Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+      child: Row(
+        children: types.map((t) {
+          final (type, label, icon) = t;
+          final isActive = widget.feedType == type;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () =>
+                  widget.ref.read(feedTypeProvider.notifier).state = type,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          )
+                        ]
+                      : [],
                 ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AnimatedPill extends StatefulWidget {
-  final List<GlobalKey> keys;
-  final int activeIndex;
-  const _AnimatedPill({required this.keys, required this.activeIndex});
-
-  @override
-  State<_AnimatedPill> createState() => _AnimatedPillState();
-}
-
-class _AnimatedPillState extends State<_AnimatedPill> {
-  double _x = 0;
-  double _w = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _update());
-  }
-
-  @override
-  void didUpdateWidget(_AnimatedPill old) {
-    super.didUpdateWidget(old);
-    if (old.activeIndex != widget.activeIndex) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _update());
-    }
-  }
-
-  void _update() {
-    final key = widget.keys[widget.activeIndex];
-    final box = key.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null) return;
-    final pos = box.localToGlobal(Offset.zero,
-        ancestor: context.findRenderObject());
-    setState(() {
-      _x = pos.dx;
-      _w = box.size.width;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 380),
-      curve: Curves.easeOutBack,
-      left: _x,
-      top: 0,
-      bottom: 0,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 380),
-        curve: Curves.easeOutBack,
-        width: _w,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 17,
+                      color: isActive
+                          ? Colors.white
+                          : isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontFamily: 'Vazirmatn',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isActive
+                            ? Colors.white
+                            : isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          );
+        }).toList(),
       ),
     );
   }
 }
+
+
+
 
 
 

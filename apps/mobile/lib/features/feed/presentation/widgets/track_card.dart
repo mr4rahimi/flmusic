@@ -7,6 +7,8 @@ import 'dart:math';
 import '../../data/feed_models.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/likes/presentation/providers/likes_provider.dart';
+import '../../../../features/comments/presentation/screens/comments_screen.dart';
+import '../../../../features/profile/presentation/providers/profile_provider.dart';
 
 // ── gradient palettes برای cover بدون عکس ──────────────────
 const _palettes = [
@@ -256,7 +258,7 @@ class _TrackCardState extends ConsumerState<TrackCard>
                       ),
                     ),
                     // Follow btn
-                    _FollowBtn(),
+                    _FollowBtn(username: track.user.username),
                     const SizedBox(width: 6),
                     // More
                     _GhostBtn(
@@ -305,7 +307,16 @@ class _TrackCardState extends ConsumerState<TrackCard>
                     _ActBtn(
                       icon: Icons.chat_bubble_outline_rounded,
                       label: '${track.commentsCount}',
-                      onTap: () {},
+                      onTap: () => showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => CommentsScreen(
+                          trackId: track.id,
+                          trackTitle: track.title,
+                          commentsCount: track.commentsCount,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 18),
                     // plays
@@ -500,10 +511,42 @@ class _Avatar extends StatelessWidget {
 }
 
 // ── Follow Button ─────────────────────────────────────────────
-class _FollowBtn extends StatefulWidget {
-  const _FollowBtn();
+class _FollowBtn extends ConsumerWidget {
+  final String username;
+  const _FollowBtn({required this.username});
+
   @override
-  State<_FollowBtn> createState() => _FollowBtnState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profileAsync = ref.watch(profileNotifierProvider(username));
+    final isFollowing = profileAsync.value?.isFollowing ?? false;
+
+    return GestureDetector(
+      onTap: () => ref.read(profileNotifierProvider(username).notifier).toggleFollow(),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+        decoration: BoxDecoration(
+          color: isFollowing
+              ? AppColors.primary.withValues(alpha: 0.15)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.7),
+            width: 1.4,
+          ),
+        ),
+        child: Text(
+          isFollowing ? 'دنبال میکنی' : 'دنبال کردن',
+          style: const TextStyle(
+            fontFamily: 'Vazirmatn',
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _FollowBtnState extends State<_FollowBtn> {
