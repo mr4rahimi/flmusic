@@ -4,11 +4,11 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/providers/theme_provider.dart';
-import 'core/utils/debug_overlay.dart';
+
 
 void main() {
   timeago.setLocaleMessages('fa', timeago.FaMessages());
-  runApp(const ProviderScope(child: DebugOverlay(child: MusicApp())));
+  runApp(const ProviderScope(child: MusicApp()));
 }
 
 class MusicApp extends ConsumerWidget {
@@ -27,7 +27,6 @@ class MusicApp extends ConsumerWidget {
         themeMode: themeMode,
         routerConfig: router,
         debugShowCheckedModeBanner: false,
-        // RTL برای فارسی
         locale: const Locale('fa', 'IR'),
         builder: (context, child) => Directionality(
           textDirection: TextDirection.rtl,
