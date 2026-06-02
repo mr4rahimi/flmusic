@@ -113,11 +113,6 @@ class _FeedTypeTabs extends StatefulWidget {
 class _FeedTypeTabsState extends State<_FeedTypeTabs> {
   final List<GlobalKey> _keys = List.generate(3, (_) => GlobalKey());
 
-  @override
-  void didUpdateWidget(_FeedTypeTabs old) {
-    super.didUpdateWidget(old);
-    if (old.feedType != widget.feedType) setState(() {});
-  }
 
   @override
   Widget build(BuildContext context) {
