@@ -87,8 +87,12 @@ class MainShell extends ConsumerWidget {
     final index = _currentIndex(location);
 
     return Scaffold(
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
       body: child,
-      floatingActionButton: _UploadFAB(onTap: () => context.push('/upload')),
+      floatingActionButton: MediaQuery.of(context).viewInsets.bottom > 0
+        ? null
+        : _UploadFAB(onTap: () => context.push('/upload')),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: _BottomNav(
         index: index,
