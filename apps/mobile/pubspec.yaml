@@ -36,6 +36,7 @@ dev_dependencies:
   build_runner: ^2.4.15
   json_serializable: ^6.9.5
   json_annotation: ^4.9.0
+  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
@@ -54,3 +55,11 @@ flutter:
           weight: 500
         - asset: assets/fonts/Vazirmatn-Bold.ttf
           weight: 700
+
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/logo.png"
+  adaptive_icon_background: "#F97316"
+  adaptive_icon_foreground: "assets/logo.png"

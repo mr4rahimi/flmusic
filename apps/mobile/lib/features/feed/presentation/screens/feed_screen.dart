@@ -272,7 +272,7 @@ class _FeedAppBar extends ConsumerWidget implements PreferredSizeWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'موزیک',
+                            'فندوق',
                             style: TextStyle(
                               fontFamily: 'Vazirmatn',
                               fontSize: 20,
