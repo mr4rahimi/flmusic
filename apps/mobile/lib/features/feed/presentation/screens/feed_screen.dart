@@ -101,84 +101,173 @@ class FeedScreen extends ConsumerWidget {
   }
 }
 
-class _FeedTypeTabs extends StatelessWidget {
+class _FeedTypeTabs extends StatefulWidget {
   final FeedType feedType;
   final WidgetRef ref;
 
   const _FeedTypeTabs({required this.feedType, required this.ref});
 
   @override
+  State<_FeedTypeTabs> createState() => _FeedTypeTabsState();
+}
+
+class _FeedTypeTabsState extends State<_FeedTypeTabs> {
+  final List<GlobalKey> _keys = List.generate(3, (_) => GlobalKey());
+
+  @override
+  void didUpdateWidget(_FeedTypeTabs old) {
+    super.didUpdateWidget(old);
+    if (old.feedType != widget.feedType) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _Tab(
-            label: 'ترندینگ',
-            type: FeedType.trending,
-            current: feedType,
-            ref: ref),
-        _Tab(
-            label: 'دنبال‌شده‌ها',
-            type: FeedType.following,
-            current: feedType,
-            ref: ref),
-        _Tab(
-            label: 'جدیدترین',
-            type: FeedType.newTracks,
-            current: feedType,
-            ref: ref),
-      ],
+    final types = [
+      (FeedType.trending, 'محبوب‌ها', Icons.local_fire_department_rounded),
+      (FeedType.following, 'دنبال‌شده‌ها', Icons.headphones_rounded),
+      (FeedType.newTracks, 'جدیدترین', Icons.access_time_rounded),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 9, 14, 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withValues(alpha: 0.07)
+                : Colors.black.withValues(alpha: 0.07),
+          ),
+        ),
+      ),
+      child: Stack(
+        children: [
+          // pill
+          _AnimatedPill(
+            keys: _keys,
+            activeIndex: types.indexWhere((t) => t.$1 == widget.feedType),
+          ),
+          // tabs
+          Row(
+            children: types.asMap().entries.map((e) {
+              final i = e.key;
+              final (type, label, icon) = e.value;
+              final isActive = widget.feedType == type;
+              return Expanded(
+                child: GestureDetector(
+                  key: _keys[i],
+                  onTap: () =>
+                      widget.ref.read(feedTypeProvider.notifier).state = type,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          icon,
+                          size: 17,
+                          color: isActive
+                              ? Colors.white
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontFamily: 'Vazirmatn',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isActive
+                                ? Colors.white
+                                : Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _Tab extends StatelessWidget {
-  final String label;
-  final FeedType type;
-  final FeedType current;
-  final WidgetRef ref;
+class _AnimatedPill extends StatefulWidget {
+  final List<GlobalKey> keys;
+  final int activeIndex;
+  const _AnimatedPill({required this.keys, required this.activeIndex});
 
-  const _Tab({
-    required this.label,
-    required this.type,
-    required this.current,
-    required this.ref,
-  });
+  @override
+  State<_AnimatedPill> createState() => _AnimatedPillState();
+}
+
+class _AnimatedPillState extends State<_AnimatedPill> {
+  double _x = 0;
+  double _w = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _update());
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedPill old) {
+    super.didUpdateWidget(old);
+    if (old.activeIndex != widget.activeIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _update());
+    }
+  }
+
+  void _update() {
+    final key = widget.keys[widget.activeIndex];
+    final box = key.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final pos = box.localToGlobal(Offset.zero,
+        ancestor: context.findRenderObject());
+    setState(() {
+      _x = pos.dx;
+      _w = box.size.width;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isActive = type == current;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => ref.read(feedTypeProvider.notifier).state = type,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isActive
-                    ? AppColors.primary
-                    : Colors.transparent,
-                width: 2,
-              ),
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutBack,
+      left: _x,
+      top: 0,
+      bottom: 0,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeOutBack,
+        width: _w,
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isActive
-                  ? AppColors.primary
-                  : AppColors.darkTextSecondary,
-              fontWeight:
-                  isActive ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 13,
-            ),
-          ),
+          ],
         ),
       ),
     );
   }
 }
+
+
 
 class _FeedAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final FeedType feedType;

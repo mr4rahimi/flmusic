@@ -14,9 +14,9 @@ class AppColors {
   static const lightElevated = Color(0xFFEEEEF6);
 
   // Accent
-  static const primary = Color(0xFF7B6FE8);
-  static const primaryLight = Color(0xFF9D94F0);
-  static const primaryDark = Color(0xFF5A50D4);
+  static const primary = Color(0xFFF97316);
+  static const primaryLight = Color(0xFFFB923C);
+  static const primaryDark = Color(0xFFEA6C0A);
   static const accent = Color(0xFFFF6B6B);
   static const accentGreen = Color(0xFF30D158);
   static const accentBlue = Color(0xFF0A84FF);
