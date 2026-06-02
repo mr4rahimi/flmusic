@@ -1,4 +1,3 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/player_provider.dart';
@@ -13,7 +12,8 @@ class MiniPlayer extends ConsumerWidget {
     final track = ref.watch(currentTrackProvider);
     if (track == null) return const SizedBox.shrink();
 
-    final player = ref.watch(audioPlayerProvider);
+    final isPlaying = ref.watch(isPlayingProvider);
+    final isLoading = ref.watch(isLoadingProvider);
 
     return GestureDetector(
       onTap: () => showModalBottomSheet(
@@ -65,21 +65,30 @@ class MiniPlayer extends ConsumerWidget {
                 ],
               ),
             ),
-            StreamBuilder<PlayerState>(
-              stream: player.onPlayerStateChanged,
-              builder: (context, snapshot) {
-                final isPlaying = snapshot.data == PlayerState.playing;
-                return IconButton(
-                  icon: Icon(
-                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: AppColors.darkTextPrimary,
-                    size: 28,
+            isLoading
+                ? const SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    icon: Icon(
+                      isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                      color: AppColors.darkTextPrimary,
+                      size: 28,
+                    ),
+                    onPressed: () =>
+                        ref.read(playerControllerProvider).togglePlayPause(),
                   ),
-                  onPressed: () =>
-                      ref.read(playerActionsProvider).togglePlayPause(),
-                );
-              },
-            ),
             const SizedBox(width: 4),
           ],
         ),

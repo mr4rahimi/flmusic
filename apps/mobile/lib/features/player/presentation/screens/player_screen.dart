@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,18 +77,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         ? '${baseUrl.replaceAll('/api/v1', '')}/${currentTrack.coverUrl}'
         : null;
 
-    return StreamBuilder<PlayerState>(
-      stream: player.onPlayerStateChanged,
-      builder: (context, stateSnapshot) {
-        final isPlaying = stateSnapshot.data == PlayerState.playing;
+    final isPlaying = ref.watch(isPlayingProvider);
+    final isLoading = ref.watch(isLoadingProvider);
 
-        if (isPlaying) {
-          _rotateController.forward();
-        } else {
-          _rotateController.stop();
-        }
+    if (isPlaying) {
+      _rotateController.forward();
+    } else {
+      _rotateController.stop();
+    }
 
-        return Container(
+    return Container(
           height: MediaQuery.of(context).size.height * 0.92,
           decoration: BoxDecoration(
             borderRadius:
