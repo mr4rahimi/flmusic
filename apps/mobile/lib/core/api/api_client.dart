@@ -1,4 +1,3 @@
-import '../utils/debug_overlay.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
@@ -6,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../storage/secure_storage.dart';
 
-// آدرس سرور production رو اینجا بذار
+
 const String _productionUrl = 'http://185.164.73.224/api/v1';
 const String _devUrl = 'http://127.0.0.1:3000/api/v1';
 
@@ -28,15 +27,18 @@ final dioProvider = Provider<Dio>((ref) {
 
   dio.interceptors.add(
     InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final storage = ref.read(secureStorageProvider);
-        final token = await storage.getAccessToken();
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        DebugOverlay.log('REQ: \${options.method} \${options.baseUrl}\${options.path}');
-              handler.next(options);
-      },
+       onRequest: (options, handler) async {
+         final storage = ref.read(secureStorageProvider);
+         final token = await storage.getAccessToken();
+         if (token != null) {
+           options.headers['Authorization'] = 'Bearer $token';
+         }
+        
+         if (options.data is FormData) {
+           options.headers.remove('Content-Type');
+         }
+         handler.next(options);
+       },
       onError: (error, handler) async {
         if (error.response?.statusCode == 401) {
           final storage = ref.read(secureStorageProvider);
