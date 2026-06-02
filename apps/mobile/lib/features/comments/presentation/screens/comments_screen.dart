@@ -193,7 +193,8 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
               left: 16,
               right: 16,
               top: 8,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 
+               MediaQuery.of(context).padding.bottom + 8,
             ),
             child: Row(
               children: [
