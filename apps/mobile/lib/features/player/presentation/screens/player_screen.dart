@@ -456,7 +456,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                           ),
                           // Previous
                           _CtrlBtn(
-                            icon: Icons.skip_next_rounded,
+                            icon: Icons.skip_previous_rounded,
                             color: isDark
                                 ? AppColors.darkTextPrimary
                                 : AppColors.lightTextPrimary,
@@ -476,7 +476,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                           ),
                           // Next
                           _CtrlBtn(
-                            icon: Icons.skip_previous_rounded,
+                            icon: Icons.skip_next_rounded,
                             color: isDark
                                 ? AppColors.darkTextPrimary
                                 : AppColors.lightTextPrimary,

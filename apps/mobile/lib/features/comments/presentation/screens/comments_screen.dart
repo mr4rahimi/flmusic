@@ -65,13 +65,18 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
     final commentsAsync = ref.watch(commentsProvider(widget.trackId));
     final authUser = ref.watch(authStateProvider).value;
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: AppColors.darkSurface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Column(
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.85 - 
+          MediaQuery.of(context).viewInsets.bottom,
+        decoration: const BoxDecoration(
+          color: AppColors.darkSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
         children: [
           // Handle
           Container(
@@ -193,8 +198,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
               left: 16,
               right: 16,
               top: 8,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 
-               MediaQuery.of(context).padding.bottom + 8,
+              bottom: 8,
             ),
             child: Row(
               children: [
@@ -267,6 +271,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
