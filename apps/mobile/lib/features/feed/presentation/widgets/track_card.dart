@@ -158,18 +158,18 @@ class _TrackCardState extends ConsumerState<TrackCard>
                   ),
 
                   // double-tap like
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onDoubleTap: () {
-                        if (!isLiked) {
-                          _triggerLike(ref, track, isLiked, storedCount);
-                          _likeCtrl.forward(from: 0);
-                        }
-                      },
-                      child: Container(color: Colors.transparent),
-                    ),
-                  ),
-
+    //              Positioned.fill(
+    //                child: GestureDetector(
+    //                  onDoubleTap: () {
+    //                    if (!isLiked) {
+    //                      _triggerLike(ref, track, isLiked, storedCount);
+    //                      _likeCtrl.forward(from: 0);
+    //                    }
+    //                  },
+    //                  child: Container(color: Colors.transparent),
+    //                ),
+    //              ),
+//
                   // burst heart
                   AnimatedBuilder(
                     animation: _likeCtrl,

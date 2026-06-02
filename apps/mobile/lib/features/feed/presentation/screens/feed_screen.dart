@@ -4,7 +4,6 @@ import '../providers/feed_provider.dart';
 import '../widgets/track_card.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
-import '../../../../core/providers/theme_provider.dart';
 import '../../../../features/player/presentation/providers/player_provider.dart';
 import '../../../../features/player/data/player_models.dart';
 import '../../../../features/player/presentation/widgets/mini_player.dart';

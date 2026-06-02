@@ -127,7 +127,6 @@ class PlayerController {
       if (state == PlayerState.paused) {
         await player.resume();
       } else {
-        // اگه track انتخاب شده ولی player هنوز شروع نکرده
         final track = _ref.read(currentTrackProvider);
         if (track != null) await _playTrack(track);
       }
