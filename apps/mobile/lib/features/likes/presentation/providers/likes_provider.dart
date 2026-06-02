@@ -10,6 +10,7 @@ final likeStatusProvider =
 class LikeNotifier extends StateNotifier<bool?> {
   final Ref _ref;
   final String _trackId;
+  bool _isToggling = false;  // ← این خط اضافه شه
 
   LikeNotifier(this._ref, this._trackId) : super(null) {
     _checkLikeStatus();
@@ -26,9 +27,12 @@ class LikeNotifier extends StateNotifier<bool?> {
   }
 
   Future<void> toggle() async {
+    if (_isToggling) return;  // ← اگه در حال toggle هست، ignore کن
+    _isToggling = true;
+
     final current = state ?? false;
-    // optimistic update
-    state = !current;
+    state = !current;  // optimistic update
+
     try {
       final dio = _ref.read(dioProvider);
       if (current) {
@@ -37,8 +41,9 @@ class LikeNotifier extends StateNotifier<bool?> {
         await dio.post('/tracks/$_trackId/like');
       }
     } catch (_) {
-      // revert
-      state = current;
+      if (mounted) state = current;  // revert
+    } finally {
+      _isToggling = false;  // ← آزاد کن
     }
   }
 }
