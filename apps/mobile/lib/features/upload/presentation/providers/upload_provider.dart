@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/storage/secure_storage.dart';
 
 enum UploadStatus { idle, uploading, processing, done, error }
 
@@ -22,13 +23,12 @@ class UploadState {
     double? progress,
     String? error,
     String? trackId,
-  }) =>
-      UploadState(
-        status: status ?? this.status,
-        progress: progress ?? this.progress,
-        error: error ?? this.error,
-        trackId: trackId ?? this.trackId,
-      );
+  }) => UploadState(
+    status: status ?? this.status,
+    progress: progress ?? this.progress,
+    error: error ?? this.error,
+    trackId: trackId ?? this.trackId,
+  );
 }
 
 class UploadNotifier extends StateNotifier<UploadState> {
@@ -49,6 +49,16 @@ class UploadNotifier extends StateNotifier<UploadState> {
     try {
       state = state.copyWith(status: UploadStatus.uploading, progress: 0);
 
+      final storage = _ref.read(secureStorageProvider);
+      final accessToken = await storage.getAccessToken();
+      if (accessToken == null) {
+        state = state.copyWith(
+          status: UploadStatus.error,
+          error: 'برای آپلود ابتدا وارد حساب کاربری شوید',
+        );
+        return;
+      }
+
       final dio = _ref.read(dioProvider);
       final formData = FormData.fromMap({
         'audio': await MultipartFile.fromFile(filePath),
@@ -57,8 +67,7 @@ class UploadNotifier extends StateNotifier<UploadState> {
         'genre': artistName,
         if (tags != null && tags.isNotEmpty) 'tags': tags.join(','),
         'visibility': visibility,
-        if (coverPath != null)
-          'cover': await MultipartFile.fromFile(coverPath),
+        if (coverPath != null) 'cover': await MultipartFile.fromFile(coverPath),
       });
 
       final response = await dio.post(
@@ -79,9 +88,22 @@ class UploadNotifier extends StateNotifier<UploadState> {
 
       await _pollTrackStatus(response.data['id']);
     } catch (e) {
+      String message = e.toString();
+      if (e is DioException) {
+        final status = e.response?.statusCode;
+        final data = e.response?.data;
+        if (status == 401) {
+          message = 'اطلاعات ورود منقضی شده یا نامعتبر است (401)';
+        } else if (data != null && data is Map && data['message'] != null) {
+          message = '${data['message']} (status: $status)';
+        } else {
+          message = 'خطای سرور هنگام آپلود (status: $status)';
+        }
+      }
+
       state = state.copyWith(
         status: UploadStatus.error,
-        error: 'خطا در آپلود: ${e.toString()}',
+        error: 'خطا در آپلود: $message',
       );
     }
   }
@@ -97,8 +119,18 @@ class UploadNotifier extends StateNotifier<UploadState> {
     try {
       state = state.copyWith(status: UploadStatus.uploading, progress: 0.2);
 
+      final storage = _ref.read(secureStorageProvider);
+      final accessToken = await storage.getAccessToken();
+      if (accessToken == null) {
+        state = state.copyWith(
+          status: UploadStatus.error,
+          error: 'برای آپلود ابتدا وارد حساب کاربری شوید',
+        );
+        return;
+      }
+
       final dio = _ref.read(dioProvider);
-      
+
       final response = await dio.post(
         '/uploads/from-url',
         data: {
@@ -119,9 +151,22 @@ class UploadNotifier extends StateNotifier<UploadState> {
 
       await _pollTrackStatus(response.data['id']);
     } catch (e) {
+      String message = e.toString();
+      if (e is DioException) {
+        final status = e.response?.statusCode;
+        final data = e.response?.data;
+        if (status == 401) {
+          message = 'اطلاعات ورود منقضی شده یا نامعتبر است (401)';
+        } else if (data != null && data is Map && data['message'] != null) {
+          message = '${data['message']} (status: $status)';
+        } else {
+          message = 'خطای سرور هنگام آپلود از لینک (status: $status)';
+        }
+      }
+
       state = state.copyWith(
         status: UploadStatus.error,
-        error: 'خطا در آپلود از لینک: ${e.toString()}',
+        error: 'خطا در آپلود از لینک: $message',
       );
     }
   }
@@ -149,30 +194,49 @@ class UploadNotifier extends StateNotifier<UploadState> {
   }
 }
 
-final uploadProvider =
-    StateNotifierProvider<UploadNotifier, UploadState>((ref) {
+final uploadProvider = StateNotifierProvider<UploadNotifier, UploadState>((
+  ref,
+) {
   return UploadNotifier(ref);
 });
 
 final artistSearchProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String>((ref, query) async {
-  if (query.trim().length < 2) return [];
-  final dio = ref.read(dioProvider);
-  final response = await dio.get('/search', queryParameters: {
-    'q': query,
-    'type': 'users',
-    'limit': 5,
-  });
-  return List<Map<String, dynamic>>.from(response.data['data'] ?? []);
-});
+    FutureProvider.family<List<Map<String, dynamic>>, String>((
+      ref,
+      query,
+    ) async {
+      if (query.trim().length < 2) return [];
+      final dio = ref.read(dioProvider);
+      final response = await dio.get(
+        '/search',
+        queryParameters: {'q': query, 'type': 'users', 'limit': 5},
+      );
+      return List<Map<String, dynamic>>.from(response.data['data'] ?? []);
+    });
 
-final tagSearchProvider =
-    FutureProvider.family<List<String>, String>((ref, query) async {
+final tagSearchProvider = FutureProvider.family<List<String>, String>((
+  ref,
+  query,
+) async {
   if (query.trim().length < 1) return [];
   final suggestions = [
-    'پاپ', 'رپ', 'راک', 'کلاسیک', 'جاز', 'الکترونیک',
-    'سنتی', 'مردمی', 'عاشقانه', 'شاد', 'غمگین', 'ریمیکس',
-    'لایو', 'آکوستیک', 'بیکلام', 'ایرانی', 'خارجی',
+    'پاپ',
+    'رپ',
+    'راک',
+    'کلاسیک',
+    'جاز',
+    'الکترونیک',
+    'سنتی',
+    'مردمی',
+    'عاشقانه',
+    'شاد',
+    'غمگین',
+    'ریمیکس',
+    'لایو',
+    'آکوستیک',
+    'بیکلام',
+    'ایرانی',
+    'خارجی',
   ];
   return suggestions
       .where((t) => t.contains(query) || query.contains(t))
