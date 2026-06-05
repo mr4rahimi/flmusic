@@ -72,7 +72,7 @@ class _TrackCardState extends ConsumerState<TrackCard>
   }
 
   @override
-  Widget build(BuildContext context, ) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final track = widget.track;
 
@@ -160,18 +160,18 @@ class _TrackCardState extends ConsumerState<TrackCard>
                   ),
 
                   // double-tap like
-    //              Positioned.fill(
-    //                child: GestureDetector(
-    //                  onDoubleTap: () {
-    //                    if (!isLiked) {
-    //                      _triggerLike(ref, track, isLiked, storedCount);
-    //                      _likeCtrl.forward(from: 0);
-    //                    }
-    //                  },
-    //                  child: Container(color: Colors.transparent),
-    //                ),
-    //              ),
-//
+                  //              Positioned.fill(
+                  //                child: GestureDetector(
+                  //                  onDoubleTap: () {
+                  //                    if (!isLiked) {
+                  //                      _triggerLike(ref, track, isLiked, storedCount);
+                  //                      _likeCtrl.forward(from: 0);
+                  //                    }
+                  //                  },
+                  //                  child: Container(color: Colors.transparent),
+                  //                ),
+                  //              ),
+                  //
                   // burst heart
                   AnimatedBuilder(
                     animation: _likeCtrl,
@@ -180,13 +180,13 @@ class _TrackCardState extends ConsumerState<TrackCard>
                       final opacity = v < 0.35
                           ? v / 0.35
                           : v < 0.7
-                              ? 0.95
-                              : 1 - (v - 0.7) / 0.3;
+                          ? 0.95
+                          : 1 - (v - 0.7) / 0.3;
                       final scale = v < 0.35
                           ? 0.2 + v / 0.35 * 0.85
                           : v < 0.7
-                              ? 1.05
-                              : 0.95 + (v - 0.7) / 0.3 * 0.3;
+                          ? 1.05
+                          : 0.95 + (v - 0.7) / 0.3 * 0.3;
                       if (v == 0) return const SizedBox.shrink();
                       return Center(
                         child: Opacity(
@@ -261,10 +261,7 @@ class _TrackCardState extends ConsumerState<TrackCard>
                     _FollowBtn(username: track.user.username),
                     const SizedBox(width: 6),
                     // More
-                    _GhostBtn(
-                      icon: Icons.more_horiz_rounded,
-                      onTap: () {},
-                    ),
+                    _GhostBtn(icon: Icons.more_horiz_rounded, onTap: () {}),
                   ],
                 ),
 
@@ -299,8 +296,8 @@ class _TrackCardState extends ConsumerState<TrackCard>
                       label: '$displayLikes',
                       active: isLiked,
                       activeColor: AppColors.primary,
-                      onTap: () => _triggerLike(
-                          ref, track, isLiked, storedCount),
+                      onTap: () =>
+                          _triggerLike(ref, track, isLiked, storedCount),
                     ),
                     const SizedBox(width: 18),
                     // comment
@@ -333,10 +330,7 @@ class _TrackCardState extends ConsumerState<TrackCard>
                     ),
                     const SizedBox(width: 4),
                     // share
-                    _GhostBtn(
-                      icon: Icons.ios_share_rounded,
-                      onTap: () {},
-                    ),
+                    _GhostBtn(icon: Icons.ios_share_rounded, onTap: () {}),
                   ],
                 ),
               ],
@@ -348,11 +342,20 @@ class _TrackCardState extends ConsumerState<TrackCard>
   }
 
   void _triggerLike(
-      WidgetRef ref, Track track, bool isLiked, int storedCount) async {
+    WidgetRef ref,
+    Track track,
+    bool isLiked,
+    int storedCount,
+  ) async {
     final base = storedCount == -1 ? track.likesCount : storedCount;
-    await ref.read(likeStatusProvider(track.id).notifier).toggle();
-    ref.read(likesCountProvider(track.id).notifier).state =
-        isLiked ? (base > 0 ? base - 1 : 0) : base + 1;
+    final success = await ref
+        .read(likeStatusProvider(track.id).notifier)
+        .toggle();
+    if (!success) return;
+
+    ref.read(likesCountProvider(track.id).notifier).state = isLiked
+        ? (base > 0 ? base - 1 : 0)
+        : base + 1;
   }
 }
 
@@ -417,9 +420,7 @@ class _Chip extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.34),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.18),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
       ),
       child: Text(
         label,
@@ -489,10 +490,7 @@ class _Avatar extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         boxShadow: [
-          BoxShadow(
-            color: colors[0].withValues(alpha: 0.3),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: colors[0].withValues(alpha: 0.3), blurRadius: 8),
         ],
       ),
       child: Center(
@@ -521,7 +519,8 @@ class _FollowBtn extends ConsumerWidget {
     final isFollowing = profileAsync.value?.isFollowing ?? false;
 
     return GestureDetector(
-      onTap: () => ref.read(profileNotifierProvider(username).notifier).toggleFollow(),
+      onTap: () =>
+          ref.read(profileNotifierProvider(username).notifier).toggleFollow(),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
@@ -558,8 +557,7 @@ class _FollowBtnState extends State<_FollowBtn> {
       onTap: () => setState(() => _following = !_following),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
         decoration: BoxDecoration(
           color: _following
               ? AppColors.primary.withValues(alpha: 0.15)
@@ -637,9 +635,7 @@ class _ActBtn extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = active && activeColor != null
         ? activeColor!
-        : (isDark
-            ? AppColors.darkTextSecondary
-            : AppColors.lightTextSecondary);
+        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary);
 
     return GestureDetector(
       onTap: onTap,

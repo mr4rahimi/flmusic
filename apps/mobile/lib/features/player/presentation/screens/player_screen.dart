@@ -112,15 +112,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     final likeStatus = ref.watch(likeStatusProvider(currentTrack.id));
     final isLiked = likeStatus ?? false;
     final storedCount = ref.watch(likesCountProvider(currentTrack.id));
-    final displayLikes =
-        storedCount == -1 ? currentTrack.likesCount : storedCount;
+    final displayLikes = storedCount == -1
+        ? currentTrack.likesCount
+        : storedCount;
 
     final palette = _paletteFor(currentTrack.id);
     final base = baseUrl.replaceAll('/api/v1', '');
     final coverUrl = currentTrack.coverUrl != null
         ? (currentTrack.coverUrl!.startsWith('http')
-            ? currentTrack.coverUrl!
-            : '$base/${currentTrack.coverUrl}')
+              ? currentTrack.coverUrl!
+              : '$base/${currentTrack.coverUrl}')
         : null;
 
     if (isPlaying) {
@@ -146,8 +147,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
               // ── Ambient background ──────────────────────────
               Positioned.fill(
                 child: ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
                   child: Stack(
                     children: [
                       // gradient ambient از palette
@@ -157,9 +159,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              palette[0].withValues(alpha: isDark ? 0.55 : 0.25),
+                              palette[0].withValues(
+                                alpha: isDark ? 0.55 : 0.25,
+                              ),
                               palette[2].withValues(alpha: isDark ? 0.3 : 0.1),
-                              isDark ? const Color(0xFF0B0B11) : AppColors.lightBg,
+                              isDark
+                                  ? const Color(0xFF0B0B11)
+                                  : AppColors.lightBg,
                             ],
                             stops: const [0, 0.45, 0.85],
                           ),
@@ -319,20 +325,31 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                             isDark: isDark,
                             onTap: () async {
                               final wasLiked =
-                                  ref.read(likeStatusProvider(currentTrack.id)) ??
-                                      false;
-                              final current =
-                                  ref.read(likesCountProvider(currentTrack.id));
+                                  ref.read(
+                                    likeStatusProvider(currentTrack.id),
+                                  ) ??
+                                  false;
+                              final current = ref.read(
+                                likesCountProvider(currentTrack.id),
+                              );
                               final base = current == -1
                                   ? currentTrack.likesCount
                                   : current;
-                              await ref
-                                  .read(likeStatusProvider(currentTrack.id)
-                                      .notifier)
+                              final success = await ref
+                                  .read(
+                                    likeStatusProvider(
+                                      currentTrack.id,
+                                    ).notifier,
+                                  )
                                   .toggle();
+                              if (!success) return;
+
                               ref
                                   .read(
-                                      likesCountProvider(currentTrack.id).notifier)
+                                    likesCountProvider(
+                                      currentTrack.id,
+                                    ).notifier,
+                                  )
                                   .state = wasLiked
                                   ? (base > 0 ? base - 1 : 0)
                                   : base + 1;
@@ -369,19 +386,21 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                         return StreamBuilder<Duration>(
                           stream: player.onDurationChanged,
                           builder: (_, durSnap) {
-                            final duration = durSnap.data ??
+                            final duration =
+                                durSnap.data ??
                                 (currentTrack.duration != null
                                     ? Duration(seconds: currentTrack.duration!)
                                     : Duration.zero);
                             final progress = duration.inMilliseconds > 0
                                 ? (position.inMilliseconds /
-                                        duration.inMilliseconds)
-                                    .clamp(0.0, 1.0)
+                                          duration.inMilliseconds)
+                                      .clamp(0.0, 1.0)
                                 : 0.0;
 
                             return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 28),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 28,
+                              ),
                               child: Column(
                                 children: [
                                   // custom seek bar
@@ -389,10 +408,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                                     progress: progress.toDouble(),
                                     onSeek: (v) => ref
                                         .read(playerControllerProvider)
-                                        .seek(Duration(
-                                            milliseconds: (v *
-                                                    duration.inMilliseconds)
-                                                .round())),
+                                        .seek(
+                                          Duration(
+                                            milliseconds:
+                                                (v * duration.inMilliseconds)
+                                                    .round(),
+                                          ),
+                                        ),
                                   ),
                                   const SizedBox(height: 6),
                                   Row(
@@ -437,67 +459,69 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // Repeat
-                          _CtrlBtn(
-                            icon: repeatMode == RepeatMode.one
-                                ? Icons.repeat_one_rounded
-                                : Icons.repeat_rounded,
-                            color: repeatMode != RepeatMode.none
-                                ? AppColors.primary
-                                : (isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary),
-                            size: 22,
-                            onTap: () => ref
-                                .read(playerControllerProvider)
-                                .cycleRepeatMode(),
-                          ),
-                          // Previous
-                          _CtrlBtn(
-                            icon: Icons.skip_previous_rounded,
-                            color: isDark
-                                ? AppColors.darkTextPrimary
-                                : AppColors.lightTextPrimary,
-                            size: 34,
-                            fill: true,
-                            onTap: () => ref
-                                .read(playerControllerProvider)
-                                .playPrevious(),
-                          ),
-                          // Play/Pause
-                          _PlayBtn(
-                            isPlaying: isPlaying,
-                            isLoading: isLoading,
-                            onTap: () => ref
-                                .read(playerControllerProvider)
-                                .togglePlayPause(),
-                          ),
-                          // Next
-                          _CtrlBtn(
-                            icon: Icons.skip_next_rounded,
-                            color: isDark
-                                ? AppColors.darkTextPrimary
-                                : AppColors.lightTextPrimary,
-                            size: 34,
-                            fill: true,
-                            onTap: () =>
-                                ref.read(playerControllerProvider).playNext(),
-                          ),
-                          // Queue count
-                          _CtrlBtn(
-                            icon: Icons.queue_music_rounded,
-                            color: queue.length > 1
-                                ? AppColors.primary
-                                : (isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary),
-                            size: 22,
-                            onTap: () {},
-                            badge: queue.length > 1 ? '${queue.length}' : null,
-                          ),
-                        ],
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Repeat
+                            _CtrlBtn(
+                              icon: repeatMode == RepeatMode.one
+                                  ? Icons.repeat_one_rounded
+                                  : Icons.repeat_rounded,
+                              color: repeatMode != RepeatMode.none
+                                  ? AppColors.primary
+                                  : (isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary),
+                              size: 22,
+                              onTap: () => ref
+                                  .read(playerControllerProvider)
+                                  .cycleRepeatMode(),
+                            ),
+                            // Previous
+                            _CtrlBtn(
+                              icon: Icons.skip_previous_rounded,
+                              color: isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
+                              size: 34,
+                              fill: true,
+                              onTap: () => ref
+                                  .read(playerControllerProvider)
+                                  .playPrevious(),
+                            ),
+                            // Play/Pause
+                            _PlayBtn(
+                              isPlaying: isPlaying,
+                              isLoading: isLoading,
+                              onTap: () => ref
+                                  .read(playerControllerProvider)
+                                  .togglePlayPause(),
+                            ),
+                            // Next
+                            _CtrlBtn(
+                              icon: Icons.skip_next_rounded,
+                              color: isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
+                              size: 34,
+                              fill: true,
+                              onTap: () =>
+                                  ref.read(playerControllerProvider).playNext(),
+                            ),
+                            // Queue count
+                            _CtrlBtn(
+                              icon: Icons.queue_music_rounded,
+                              color: queue.length > 1
+                                  ? AppColors.primary
+                                  : (isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary),
+                              size: 22,
+                              onTap: () {},
+                              badge: queue.length > 1
+                                  ? '${queue.length}'
+                                  : null,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -576,10 +600,8 @@ class _RadialVisualizer extends StatelessWidget {
           if (isPlaying)
             AnimatedBuilder(
               animation: pulseCtrl,
-              builder: (_, __) => _RadialBars(
-                progress: pulseCtrl.value,
-                color: palette[0],
-              ),
+              builder: (_, __) =>
+                  _RadialBars(progress: pulseCtrl.value, color: palette[0]),
             ),
 
           // cover دوار
@@ -800,9 +822,7 @@ class _SeekBar extends StatelessWidget {
             ),
             // thumb
             Positioned(
-              left: progress *
-                      (MediaQuery.of(context).size.width - 56) -
-                  7,
+              left: progress * (MediaQuery.of(context).size.width - 56) - 7,
               child: Container(
                 width: 14,
                 height: 14,
@@ -859,8 +879,10 @@ class _CtrlBtn extends StatelessWidget {
                 top: 4,
                 right: 4,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(99),

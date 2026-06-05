@@ -3,14 +3,14 @@ import '../../../../core/api/api_client.dart';
 
 final likeStatusProvider =
     StateNotifierProvider.family<LikeNotifier, bool?, String>((ref, trackId) {
-  ref.keepAlive();
-  return LikeNotifier(ref, trackId);
-});
+      ref.keepAlive();
+      return LikeNotifier(ref, trackId);
+    });
 
 class LikeNotifier extends StateNotifier<bool?> {
   final Ref _ref;
   final String _trackId;
-  bool _isToggling = false;  // ← این خط اضافه شه
+  bool _isToggling = false;
 
   LikeNotifier(this._ref, this._trackId) : super(null) {
     _checkLikeStatus();
@@ -26,12 +26,13 @@ class LikeNotifier extends StateNotifier<bool?> {
     }
   }
 
-  Future<void> toggle() async {
-    if (_isToggling) return;  // ← اگه در حال toggle هست، ignore کن
+  Future<bool> toggle() async {
+    if (_isToggling) return false;
     _isToggling = true;
 
     final current = state ?? false;
-    state = !current;  // optimistic update
+    final next = !current;
+    state = next;
 
     try {
       final dio = _ref.read(dioProvider);
@@ -40,16 +41,17 @@ class LikeNotifier extends StateNotifier<bool?> {
       } else {
         await dio.post('/tracks/$_trackId/like');
       }
+      return true;
     } catch (_) {
-      if (mounted) state = current;  // revert
+      if (mounted) state = current;
+      return false;
     } finally {
-      _isToggling = false;  // ← آزاد کن
+      _isToggling = false;
     }
   }
 }
 
-final likesCountProvider =
-    StateProvider.family<int, String>((ref, trackId) {
+final likesCountProvider = StateProvider.family<int, String>((ref, trackId) {
   ref.keepAlive();
   return -1;
 });
