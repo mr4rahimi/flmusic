@@ -11,6 +11,7 @@ import '../../features/notifications/presentation/providers/notifications_provid
 import '../../features/upload/presentation/screens/upload_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../../features/playlists/presentation/screens/playlist_detail_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -40,6 +41,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+
+      GoRoute(
+        path: '/playlist/:id',
+        builder: (_, state) => PlaylistDetailScreen(
+          playlistId: state.pathParameters['id']!,
+        ),
+)       
     ],
   );
 });

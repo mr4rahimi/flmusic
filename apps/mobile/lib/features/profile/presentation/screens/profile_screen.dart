@@ -13,17 +13,27 @@ import '../../../../features/player/data/player_models.dart';
 import '../../../../features/player/presentation/screens/player_screen.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../features/playlists/presentation/providers/playlist_provider.dart';
+import '../../../../features/playlists/data/playlist_models.dart';
 
-class ProfileScreen extends ConsumerWidget {
+  class ProfileScreen extends ConsumerStatefulWidget {
   final String username;
   const ProfileScreen({super.key, required this.username});
+  @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  int _selectedTab = 0; // 0: آهنگ‌ها، 1: پلی‌لیست‌ها
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(profileNotifierProvider(username));
-    final tracksAsync = ref.watch(profileTracksProvider(username));
+  Widget build(BuildContext context) {
+    final profileAsync = ref.watch(profileNotifierProvider(widget.username));
+    final tracksAsync = ref.watch(profileTracksProvider(widget.username));
     final authUser = ref.watch(authStateProvider).value;
-    final isMe = authUser?.username == username;
+    final isMe = authUser?.username == widget.username;
+
+
 
     return Scaffold(
       body: profileAsync.when(
@@ -39,7 +49,7 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () =>
-                    ref.invalidate(profileNotifierProvider(username)),
+                    ref.read(profileNotifierProvider(widget.username).notifier).toggleFollow(),
                 child: const Text('تلاش مجدد'),
               ),
             ],
@@ -55,7 +65,7 @@ class ProfileScreen extends ConsumerWidget {
                   ? [
                       IconButton(
                         icon: const Icon(Icons.logout_rounded),
-                        onPressed: () => _showLogoutDialog(context, ref),
+                        onPressed: () => _showLogoutDialog(context),
                       ),
                     ]
                   : null,
@@ -78,7 +88,7 @@ class ProfileScreen extends ConsumerWidget {
                       // Avatar با قابلیت آپلود
                       GestureDetector(
                         onTap: isMe
-                            ? () => _pickAvatar(context, ref)
+                            ? () => _pickAvatar(context)
                             : null,
                         child: Stack(
                           children: [
@@ -195,7 +205,7 @@ class ProfileScreen extends ConsumerWidget {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () => ref
-                              .read(profileNotifierProvider(username)
+                              .read(profileNotifierProvider(widget.username)
                                   .notifier)
                               .toggleFollow(),
                           style: ElevatedButton.styleFrom(
@@ -222,7 +232,7 @@ class ProfileScreen extends ConsumerWidget {
                         width: double.infinity,
                         child: OutlinedButton.icon(
                           onPressed: () => _showEditProfile(
-                              context, ref, profile.bio),
+                              context, profile.bio),
                           icon: const Icon(Icons.edit_outlined, size: 18),
                           label: const Text('ویرایش پروفایل'),
                           style: OutlinedButton.styleFrom(
@@ -234,58 +244,48 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
 
-                    const SizedBox(height: 16),
-                    const Divider(color: AppColors.darkSurface),
                     const SizedBox(height: 8),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'آهنگ‌ها',
-                        style: TextStyle(
-                          color: AppColors.darkTextPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    _ProfileTabBar(
+                      selectedTab: _selectedTab,
+                      onTabChange: (t) => setState(() => _selectedTab = t),
                     ),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
             ),
 
             // Tracks
-            tracksAsync.when(
-              loading: () => const SliverToBoxAdapter(
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (_, __) => const SliverToBoxAdapter(
-                child: Center(
-                    child: Text('خطا در بارگذاری آهنگ‌ها')),
-              ),
-              data: (tracks) => tracks.isEmpty
-                  ? const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Center(
-                          child: Text(
-                            'هنوز آهنگی آپلود نشده',
-                            style: TextStyle(
-                                color: AppColors.darkTextSecondary),
+              if (_selectedTab == 0)
+              tracksAsync.when(
+                loading: () => const SliverToBoxAdapter(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (_, __) => const SliverToBoxAdapter(
+                  child: Center(child: Text('خطا در بارگذاری آهنگ‌ها')),
+                ),
+                data: (tracks) => tracks.isEmpty
+                    ? const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Center(
+                            child: Text('هنوز آهنگی آپلود نشده',
+                                style: TextStyle(color: AppColors.darkTextSecondary)),
                           ),
                         ),
-                      ),
-                    )
-                  : SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (_, i) => TrackCard(
-                          track: tracks[i],
-                          onTap: () =>
-                              _playTrack(context, ref, tracks, i),
+                      )
+                    : SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (_, i) => TrackCard(
+                            track: tracks[i],
+                            onTap: () => _playTrack(context, tracks, i),
+                          ),
+                          childCount: tracks.length,
                         ),
-                        childCount: tracks.length,
                       ),
-                    ),
-            ),
+              )
+            else
+              _PlaylistsTab(username: widget.username),
             const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],
         ),
@@ -293,7 +293,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _pickAvatar(BuildContext context, WidgetRef ref) async {
+  Future<void> _pickAvatar(BuildContext context) async {
     final picker = ImagePicker();
     final image =
         await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -305,7 +305,7 @@ class ProfileScreen extends ConsumerWidget {
         'avatar': await MultipartFile.fromFile(image.path),
       });
       await dio.post('/profiles/me/avatar', data: formData);
-      ref.invalidate(profileNotifierProvider(username));
+      ref.invalidate(profileNotifierProvider(widget.username));
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -329,7 +329,7 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
-  void _playTrack(BuildContext context, WidgetRef ref,
+  void _playTrack(BuildContext context,
       List<Track> tracks, int index) {
     final queue = tracks
         .map((t) => PlayerTrack(
@@ -352,7 +352,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+  void _showLogoutDialog(BuildContext context) {
     showAdaptiveDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -382,7 +382,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   void _showEditProfile(
-      BuildContext context, WidgetRef ref, String? currentBio) {
+      BuildContext context, String? currentBio) {
     final bioController = TextEditingController(text: currentBio);
     showModalBottomSheet(
       context: context,
@@ -428,7 +428,7 @@ class ProfileScreen extends ConsumerWidget {
                   final dio = ref.read(dioProvider);
                   await dio.patch('/profiles/me',
                       data: {'bio': bioController.text});
-                  ref.invalidate(profileNotifierProvider(username));
+                  ref.invalidate(profileNotifierProvider(widget.username));
                   if (context.mounted) Navigator.pop(context);
                 } catch (_) {}
               },
@@ -464,6 +464,239 @@ class _StatItem extends StatelessWidget {
             style: const TextStyle(
                 color: AppColors.darkTextSecondary, fontSize: 12)),
       ],
+    );
+  }
+}
+
+// ── Tab Bar ───────────────────────────────────────────────────
+class _ProfileTabBar extends StatelessWidget {
+  final int selectedTab;
+  final ValueChanged<int> onTabChange;
+
+  const _ProfileTabBar({
+    required this.selectedTab,
+    required this.onTabChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tabs = [
+      (Icons.music_note_rounded, 'آهنگ‌ها'),
+      (Icons.queue_music_rounded, 'پلی‌لیست‌ها'),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkElevated : AppColors.lightElevated,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: tabs.asMap().entries.map((e) {
+          final i = e.key;
+          final (icon, label) = e.value;
+          final isActive = selectedTab == i;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onTabChange(i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          )
+                        ]
+                      : [],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 16,
+                      color: isActive
+                          ? Colors.white
+                          : (isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontFamily: 'Vazirmatn',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isActive
+                            ? Colors.white
+                            : (isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ── Playlists Tab ─────────────────────────────────────────────
+class _PlaylistsTab extends ConsumerWidget {
+  final String username;
+  const _PlaylistsTab({required this.username});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playlistsAsync = ref.watch(myPlaylistsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return playlistsAsync.when(
+      loading: () => const SliverToBoxAdapter(
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => const SliverToBoxAdapter(
+        child: Center(child: Text('خطا در بارگذاری')),
+      ),
+      data: (playlists) => playlists.isEmpty
+          ? SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(48),
+                child: Column(
+                  children: [
+                    Icon(Icons.queue_music_rounded,
+                        size: 64,
+                        color: (isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary)
+                            .withValues(alpha: 0.4)),
+                    const SizedBox(height: 16),
+                    Text(
+                      'هنوز پلی‌لیستی نساختی',
+                      style: TextStyle(
+                        fontFamily: 'Vazirmatn',
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.85,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (_, i) => _PlaylistGridItem(playlist: playlists[i]),
+                childCount: playlists.length,
+              ),
+            ),
+    );
+  }
+}
+
+// ── Playlist Grid Item ────────────────────────────────────────
+class _PlaylistGridItem extends StatelessWidget {
+  final playlist;
+  const _PlaylistGridItem({required this.playlist});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: () => context.push('/playlist/${playlist.id}'),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.06),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // cover
+            Expanded(
+              child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                  ),
+                  child: playlist.coverUrl != null
+                      ? Image.network(
+                          playlist.coverUrl!,
+                          fit: BoxFit.cover,
+                        )
+                      : Center(
+                          child: Icon(
+                            Icons.queue_music_rounded,
+                            color: AppColors.primary,
+                            size: 48,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+            // info
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    playlist.name,
+                    style: TextStyle(
+                      fontFamily: 'Vazirmatn',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.lightTextPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${playlist.tracksCount} آهنگ',
+                    style: TextStyle(
+                      fontFamily: 'Vazirmatn',
+                      fontSize: 11,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

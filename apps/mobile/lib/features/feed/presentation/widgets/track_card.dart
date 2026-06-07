@@ -9,6 +9,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../features/likes/presentation/providers/likes_provider.dart';
 import '../../../../features/comments/presentation/screens/comments_screen.dart';
 import '../../../../features/profile/presentation/providers/profile_provider.dart';
+import '../../../../features/playlists/presentation/widgets/save_to_playlist_sheet.dart';
 
 // ── gradient palettes برای cover بدون عکس ──────────────────
 const _palettes = [
@@ -325,8 +326,16 @@ class _TrackCardState extends ConsumerState<TrackCard>
                     const Spacer(),
                     // bookmark
                     _GhostBtn(
-                      icon: Icons.bookmark_outline_rounded,
-                      onTap: () {},
+                      icon: Icons.bookmark_add_outlined,
+                      onTap: () => showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => SaveToPlaylistSheet(
+                          trackId: track.id,
+                          trackTitle: track.title,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 4),
                     // share
