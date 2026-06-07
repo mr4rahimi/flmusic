@@ -16,6 +16,7 @@ import { CommentsModule } from './modules/comments/comments.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { SearchModule } from './modules/search/search.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PlaylistsModule } from './modules/playlists/playlists.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     FeedModule,
     SearchModule,
     NotificationsModule,
+    PlaylistsModule,
   ],
 })
 export class AppModule {}
