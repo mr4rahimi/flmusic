@@ -189,7 +189,7 @@ flutter build apk --release --split-per-abi
 
 
 
-For collaboration or inquiries:
+## For collaboration or inquiries:
 📧 +989916352600 
 telegram or whatsapp
 
