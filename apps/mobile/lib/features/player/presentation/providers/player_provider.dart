@@ -1,7 +1,8 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
 import '../../data/player_models.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/audio/audio_handler.dart';
 
 // ── State ──────────────────────────────────────────────────────────────────
 
@@ -12,15 +13,13 @@ final repeatModeProvider   = StateProvider<RepeatMode>((ref) => RepeatMode.all);
 final isPlayingProvider    = StateProvider<bool>((ref) => false);
 final isLoadingProvider    = StateProvider<bool>((ref) => false);
 
-// ── Single AudioPlayer instance ────────────────────────────────────────────
+// ── AudioHandler provider — overridden with real instance in main.dart ─────
 
-final audioPlayerProvider = Provider<AudioPlayer>((ref) {
-  final player = AudioPlayer();
-  ref.onDispose(() => player.dispose());
-  return player;
-});
+final audioHandlerProvider = Provider<MusicAudioHandler>(
+  (ref) => throw UnimplementedError('Override audioHandlerProvider in main'),
+);
 
-// ── Controller ────────────────────────────────────────────────────────────
+// ── Controller ─────────────────────────────────────────────────────────────
 
 final playerControllerProvider = Provider<PlayerController>((ref) {
   final controller = PlayerController(ref);
@@ -36,41 +35,55 @@ class PlayerController {
     _init();
   }
 
+  MusicAudioHandler get _handler => _ref.read(audioHandlerProvider);
+
   void _init() {
-    final player = _ref.read(audioPlayerProvider);
+    final player = _handler.player;
 
-    // sync isPlaying با state واقعی player
-    final s1 = player.onPlayerStateChanged.listen((state) {
-      final isPlaying = state == PlayerState.playing;
-      _ref.read(isPlayingProvider.notifier).state = isPlaying;
-      if (state == PlayerState.playing || state == PlayerState.paused) {
-        _ref.read(isLoadingProvider.notifier).state = false;
+    final sub = player.playerStateStream.listen((state) {
+      _ref.read(isPlayingProvider.notifier).state = state.playing;
+
+      switch (state.processingState) {
+        case ProcessingState.loading:
+        case ProcessingState.buffering:
+          _ref.read(isLoadingProvider.notifier).state = true;
+        case ProcessingState.ready:
+          _ref.read(isLoadingProvider.notifier).state = false;
+        case ProcessingState.completed:
+          _ref.read(isLoadingProvider.notifier).state = false;
+          _onComplete();
+        case ProcessingState.idle:
+          break;
       }
     });
 
-    // auto next on complete
-    final s2 = player.onPlayerComplete.listen((_) {
-      _ref.read(isPlayingProvider.notifier).state = false;
-      final repeat = _ref.read(repeatModeProvider);
-      if (repeat == RepeatMode.one) {
-        _replay();
-      } else {
-        _autoNext();
-      }
-    });
+    _handler.setSkipCallbacks(
+      onNext: playNext,
+      onPrevious: playPrevious,
+    );
 
-    _disposers.add(s1.cancel);
-    _disposers.add(s2.cancel);
+    _disposers.add(sub.cancel);
   }
 
   void dispose() {
-    for (final d in _disposers) d();
+    for (final d in _disposers) {
+      d();
+    }
+  }
+
+  void _onComplete() {
+    _ref.read(isPlayingProvider.notifier).state = false;
+    final repeat = _ref.read(repeatModeProvider);
+    if (repeat == RepeatMode.one) {
+      _replay();
+    } else {
+      _autoNext();
+    }
   }
 
   Future<void> _replay() async {
-    final player = _ref.read(audioPlayerProvider);
-    await player.seek(Duration.zero);
-    await player.resume();
+    await _handler.seek(Duration.zero);
+    await _handler.play();
   }
 
   Future<void> _autoNext() async {
@@ -97,35 +110,42 @@ class PlayerController {
     _ref.read(isLoadingProvider.notifier).state = true;
     _ref.read(isPlayingProvider.notifier).state = false;
 
-    final player = _ref.read(audioPlayerProvider);
-    await player.stop();
-
     final base = baseUrl.replaceAll('/api/v1', '');
     final audioUrl = track.audioUrl!;
     final url = audioUrl.startsWith('http') ? audioUrl : '$base/$audioUrl';
 
+    String? artUri;
+    if (track.coverUrl != null) {
+      final c = track.coverUrl!;
+      artUri = c.startsWith('http') ? c : '$base/$c';
+    }
+
     try {
-      await player.play(UrlSource(url));
-      // play count
+      await _handler.playUrl(
+        id: track.id,
+        url: url,
+        title: track.title,
+        artist: track.username,
+        artUri: artUri,
+        duration: track.duration != null ? Duration(seconds: track.duration!) : null,
+      );
       try {
         final dio = _ref.read(dioProvider);
-        await dio.post('/tracks/${track.id}/play').catchError((_) {});
+        await dio.post('/tracks/${track.id}/play');
       } catch (_) {}
-    } catch (e) {
+    } catch (_) {
       _ref.read(isLoadingProvider.notifier).state = false;
     }
   }
 
   Future<void> togglePlayPause() async {
-    final player = _ref.read(audioPlayerProvider);
     final isPlaying = _ref.read(isPlayingProvider);
-
     if (isPlaying) {
-      await player.pause();
+      await _handler.pause();
     } else {
-      final state = player.state;
-      if (state == PlayerState.paused) {
-        await player.resume();
+      final p = _handler.player.processingState;
+      if (p == ProcessingState.ready || p == ProcessingState.buffering) {
+        await _handler.play();
       } else {
         final track = _ref.read(currentTrackProvider);
         if (track != null) await _playTrack(track);
@@ -133,9 +153,7 @@ class PlayerController {
     }
   }
 
-  Future<void> seek(Duration position) async {
-    await _ref.read(audioPlayerProvider).seek(position);
-  }
+  Future<void> seek(Duration position) => _handler.seek(position);
 
   Future<void> playNext() async {
     final queue = _ref.read(queueProvider);
@@ -149,14 +167,10 @@ class PlayerController {
   Future<void> playPrevious() async {
     final queue = _ref.read(queueProvider);
     if (queue.isEmpty) return;
-
-    final player = _ref.read(audioPlayerProvider);
-    final position = await player.getCurrentPosition();
-    if (position != null && position.inSeconds > 3) {
-      await player.seek(Duration.zero);
+    if (_handler.player.position.inSeconds > 3) {
+      await _handler.seek(Duration.zero);
       return;
     }
-
     final index = _ref.read(currentIndexProvider);
     final prev = index > 0 ? index - 1 : queue.length - 1;
     _ref.read(currentIndexProvider.notifier).state = prev;

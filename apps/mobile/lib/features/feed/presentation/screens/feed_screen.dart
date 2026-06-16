@@ -6,7 +6,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../features/player/presentation/providers/player_provider.dart';
 import '../../../../features/player/data/player_models.dart';
-import '../../../../features/player/presentation/widgets/mini_player.dart';
 import '../../../../features/player/presentation/screens/player_screen.dart';
 
 class FeedScreen extends ConsumerWidget {
@@ -19,10 +18,7 @@ class FeedScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: _FeedAppBar(feedType: feedType, ref: ref),
-      body: Column(
-        children: [
-          Expanded(
-            child: feedAsync.when(
+      body: feedAsync.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
@@ -92,10 +88,6 @@ class FeedScreen extends ConsumerWidget {
                       ),
                     ),
             ),
-          ),
-          const MiniPlayer(),
-        ],
-      ),
     );
   }
 }

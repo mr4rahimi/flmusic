@@ -10,6 +10,7 @@ import '../../features/notifications/presentation/screens/notifications_screen.d
 import '../../features/notifications/presentation/providers/notifications_provider.dart';
 import '../../features/upload/presentation/screens/upload_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../features/player/presentation/widgets/mini_player.dart';
 import '../theme/app_theme.dart';
 import '../../features/playlists/presentation/screens/playlist_detail_screen.dart';
 
@@ -100,20 +101,26 @@ class MainShell extends ConsumerWidget {
         ? null
         : _UploadFAB(onTap: () => context.push('/upload')),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _BottomNav(
-        index: index,
-        unreadCount: unreadAsync.value ?? 0,
-        onTap: (i) {
-          switch (i) {
-            case 0: context.go('/feed');
-            case 1: context.go('/search');
-            case 2: context.go('/notifications');
-            case 3:
-              if (authUser != null) {
-                context.go('/profile/${authUser.username}');
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const MiniPlayer(),
+          _BottomNav(
+            index: index,
+            unreadCount: unreadAsync.value ?? 0,
+            onTap: (i) {
+              switch (i) {
+                case 0: context.go('/feed');
+                case 1: context.go('/search');
+                case 2: context.go('/notifications');
+                case 3:
+                  if (authUser != null) {
+                    context.go('/profile/${authUser.username}');
+                  }
               }
-          }
-        },
+            },
+          ),
+        ],
       ),
     );
   }

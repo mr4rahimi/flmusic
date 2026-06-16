@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,7 +38,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     with TickerProviderStateMixin {
   late AnimationController _rotateCtrl;
   late AnimationController _pulseCtrl;
-  late AnimationController _waveCtrl;
 
   // drag to dismiss
   double _dragY = 0;
@@ -57,17 +55,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1600),
     )..repeat();
-    _waveCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
   }
 
   @override
   void dispose() {
     _rotateCtrl.dispose();
     _pulseCtrl.dispose();
-    _waveCtrl.dispose();
     super.dispose();
   }
 
@@ -100,7 +93,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
   @override
   Widget build(BuildContext context) {
-    final player = ref.watch(audioPlayerProvider);
+    final handler = ref.watch(audioHandlerProvider);
+    final player = handler.player;
     final currentTrack = ref.watch(currentTrackProvider) ?? widget.track;
     final repeatMode = ref.watch(repeatModeProvider);
     final queue = ref.watch(queueProvider);
@@ -125,9 +119,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         : null;
 
     if (isPlaying) {
-      _rotateCtrl.forward();
+      if (!_rotateCtrl.isAnimating) _rotateCtrl.repeat();
+      if (!_pulseCtrl.isAnimating) _pulseCtrl.repeat();
     } else {
       _rotateCtrl.stop();
+      _pulseCtrl.stop();
     }
 
     return GestureDetector(
@@ -380,11 +376,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
                     // ── Progress Bar ─────────────────────────
                     StreamBuilder<Duration>(
-                      stream: player.onPositionChanged,
+                      stream: player.positionStream,
                       builder: (_, posSnap) {
                         final position = posSnap.data ?? Duration.zero;
-                        return StreamBuilder<Duration>(
-                          stream: player.onDurationChanged,
+                        return StreamBuilder<Duration?>(
+                          stream: player.durationStream,
                           builder: (_, durSnap) {
                             final duration =
                                 durSnap.data ??

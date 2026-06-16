@@ -6,7 +6,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../features/player/presentation/providers/player_provider.dart';
 import '../../../../features/player/data/player_models.dart';
 import '../../../../features/player/presentation/screens/player_screen.dart';
-import '../../../../features/player/presentation/widgets/mini_player.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -201,7 +200,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     },
                   ),
           ),
-          const MiniPlayer(),
         ],
       ),
     );
