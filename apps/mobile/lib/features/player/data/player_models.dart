@@ -1,4 +1,4 @@
-enum RepeatMode { none, one, all }
+export '../../../core/audio/audio_handler.dart' show RepeatMode;
 
 class PlayerTrack {
   final String id;

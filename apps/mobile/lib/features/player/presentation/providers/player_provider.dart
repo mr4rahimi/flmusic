@@ -40,6 +40,7 @@ class PlayerController {
   void _init() {
     final player = _handler.player;
 
+    // Sync UI state from player events
     final sub = player.playerStateStream.listen((state) {
       _ref.read(isPlayingProvider.notifier).state = state.playing;
 
@@ -51,16 +52,23 @@ class PlayerController {
           _ref.read(isLoadingProvider.notifier).state = false;
         case ProcessingState.completed:
           _ref.read(isLoadingProvider.notifier).state = false;
-          _onComplete();
+          _ref.read(isPlayingProvider.notifier).state = false;
         case ProcessingState.idle:
           break;
       }
     });
 
-    _handler.setSkipCallbacks(
-      onNext: playNext,
-      onPrevious: playPrevious,
-    );
+    // When handler auto-advances (notification/lock screen/auto-next),
+    // sync UI state without calling playUrl again
+    _handler.setOnIndexChanged((index) {
+      final queue = _ref.read(queueProvider);
+      if (index >= 0 && index < queue.length) {
+        _ref.read(currentIndexProvider.notifier).state = index;
+        _ref.read(currentTrackProvider.notifier).state = queue[index];
+        _ref.read(isLoadingProvider.notifier).state = true;
+        _postPlayCount(queue[index].id);
+      }
+    });
 
     _disposers.add(sub.cancel);
   }
@@ -71,41 +79,44 @@ class PlayerController {
     }
   }
 
-  void _onComplete() {
-    _ref.read(isPlayingProvider.notifier).state = false;
-    final repeat = _ref.read(repeatModeProvider);
-    if (repeat == RepeatMode.one) {
-      _replay();
-    } else {
-      _autoNext();
-    }
-  }
-
-  Future<void> _replay() async {
-    await _handler.seek(Duration.zero);
-    await _handler.play();
-  }
-
-  Future<void> _autoNext() async {
-    final queue = _ref.read(queueProvider);
-    if (queue.isEmpty) return;
-    final index = _ref.read(currentIndexProvider);
-    final repeat = _ref.read(repeatModeProvider);
-    if (repeat == RepeatMode.none && index >= queue.length - 1) return;
-    final next = (index + 1) % queue.length;
-    _ref.read(currentIndexProvider.notifier).state = next;
-    await _playTrack(queue[next]);
+  Future<void> _postPlayCount(String trackId) async {
+    try {
+      await _ref.read(dioProvider).post('/tracks/$trackId/play');
+    } catch (_) {}
   }
 
   Future<void> setQueue(List<PlayerTrack> tracks, int startIndex) async {
     _ref.read(queueProvider.notifier).state = tracks;
     _ref.read(currentIndexProvider.notifier).state = startIndex;
+
+    // Sync full queue to handler so notification/lock screen next/prev works
+    final base = baseUrl.replaceAll('/api/v1', '');
+    final audioItems = tracks.map((t) {
+      final rawUrl = t.audioUrl ?? '';
+      final url = rawUrl.startsWith('http') ? rawUrl : '$base/$rawUrl';
+      String? artUri;
+      if (t.coverUrl != null) {
+        final c = t.coverUrl!;
+        artUri = c.startsWith('http') ? c : '$base/$c';
+      }
+      return AudioQueueItem(
+        id: t.id,
+        url: url,
+        title: t.title,
+        artist: t.username,
+        artUri: artUri,
+        duration: t.duration != null ? Duration(seconds: t.duration!) : null,
+      );
+    }).toList();
+    _handler.syncQueue(audioItems, startIndex);
+
     await _playTrack(tracks[startIndex]);
   }
 
   Future<void> _playTrack(PlayerTrack track) async {
     if (track.audioUrl == null) return;
 
+    final queueIndex = _ref.read(currentIndexProvider);
     _ref.read(currentTrackProvider.notifier).state = track;
     _ref.read(isLoadingProvider.notifier).state = true;
     _ref.read(isPlayingProvider.notifier).state = false;
@@ -122,6 +133,7 @@ class PlayerController {
 
     try {
       await _handler.playUrl(
+        queueIndex: queueIndex,
         id: track.id,
         url: url,
         title: track.title,
@@ -129,10 +141,7 @@ class PlayerController {
         artUri: artUri,
         duration: track.duration != null ? Duration(seconds: track.duration!) : null,
       );
-      try {
-        final dio = _ref.read(dioProvider);
-        await dio.post('/tracks/${track.id}/play');
-      } catch (_) {}
+      await _postPlayCount(track.id);
     } catch (_) {
       _ref.read(isLoadingProvider.notifier).state = false;
     }
@@ -179,11 +188,13 @@ class PlayerController {
 
   void cycleRepeatMode() {
     final current = _ref.read(repeatModeProvider);
-    _ref.read(repeatModeProvider.notifier).state = switch (current) {
+    final next = switch (current) {
       RepeatMode.none => RepeatMode.all,
       RepeatMode.all  => RepeatMode.one,
       RepeatMode.one  => RepeatMode.none,
     };
+    _ref.read(repeatModeProvider.notifier).state = next;
+    _handler.updateRepeatMode(next);
   }
 }
 
