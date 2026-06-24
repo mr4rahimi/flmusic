@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,7 +24,7 @@ export class LikesService {
     if (!track) throw new NotFoundException('Track not found');
 
     const existing = await this.likeRepo.findOne({ where: { userId, trackId } });
-    if (existing) throw new ConflictException('Already liked');
+    if (existing) return; // idempotent
 
     await this.likeRepo.save(this.likeRepo.create({ userId, trackId }));
     await this.trackRepo.increment({ id: trackId }, 'likesCount', 1);
@@ -40,7 +39,7 @@ export class LikesService {
 
   async unlike(userId: string, trackId: string): Promise<void> {
     const existing = await this.likeRepo.findOne({ where: { userId, trackId } });
-    if (!existing) throw new NotFoundException('Like not found');
+    if (!existing) return; // idempotent
 
     await this.likeRepo.remove(existing);
     await this.trackRepo.decrement({ id: trackId }, 'likesCount', 1);

@@ -355,16 +355,19 @@ class _TrackCardState extends ConsumerState<TrackCard>
     Track track,
     bool isLiked,
     int storedCount,
-  ) async {
+  ) {
     final base = storedCount == -1 ? track.likesCount : storedCount;
-    final success = await ref
-        .read(likeStatusProvider(track.id).notifier)
-        .toggle();
-    if (!success) return;
+    final optimisticCount = isLiked ? (base > 0 ? base - 1 : 0) : base + 1;
 
-    ref.read(likesCountProvider(track.id).notifier).state = isLiked
-        ? (base > 0 ? base - 1 : 0)
-        : base + 1;
+    // Optimistic count update immediately
+    ref.read(likesCountProvider(track.id).notifier).state = optimisticCount;
+
+    ref.read(likeStatusProvider(track.id).notifier).toggle().then((success) {
+      if (!success) {
+        // Revert count on failure
+        ref.read(likesCountProvider(track.id).notifier).state = base;
+      }
+    });
   }
 }
 

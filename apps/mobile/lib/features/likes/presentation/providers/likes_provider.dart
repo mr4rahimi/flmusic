@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/api/api_client.dart';
 
@@ -42,6 +43,14 @@ class LikeNotifier extends StateNotifier<bool?> {
         await dio.post('/tracks/$_trackId/like');
       }
       return true;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        // Already liked — optimistic update was fine, keep liked state
+        if (mounted) state = true;
+        return true;
+      }
+      if (mounted) state = current;
+      return false;
     } catch (_) {
       if (mounted) state = current;
       return false;
