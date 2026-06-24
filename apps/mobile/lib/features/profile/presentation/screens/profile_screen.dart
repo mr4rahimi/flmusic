@@ -561,7 +561,20 @@ class _PlaylistsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playlistsAsync = ref.watch(myPlaylistsProvider);
+    final authUser = ref.watch(authStateProvider).value;
+    final isMe = authUser?.username == username;
+    // Profile is already cached (loaded by parent), so .value is available instantly.
+    final profileId = ref.watch(profileNotifierProvider(username)).value?.id;
+
+    final AsyncValue<List<Playlist>> playlistsAsync;
+    if (isMe) {
+      playlistsAsync = ref.watch(myPlaylistsProvider);
+    } else if (profileId != null) {
+      playlistsAsync = ref.watch(userPlaylistsProvider(profileId));
+    } else {
+      playlistsAsync = const AsyncLoading();
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return playlistsAsync.when(
@@ -585,7 +598,7 @@ class _PlaylistsTab extends ConsumerWidget {
                             .withValues(alpha: 0.4)),
                     const SizedBox(height: 16),
                     Text(
-                      'هنوز پلی‌لیستی نساختی',
+                      isMe ? 'هنوز پلی‌لیستی نساختی' : 'پلی‌لیستی وجود ندارد',
                       style: TextStyle(
                         fontFamily: 'Vazirmatn',
                         color: isDark

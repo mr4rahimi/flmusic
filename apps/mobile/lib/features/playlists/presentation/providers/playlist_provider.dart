@@ -44,6 +44,14 @@ class MyPlaylistsNotifier extends AsyncNotifier<List<Playlist>> {
   }
 }
 
+// پلی‌لیست‌های یک کاربر خاص (با userId)
+final userPlaylistsProvider =
+    FutureProvider.family<List<Playlist>, String>((ref, userId) async {
+  final dio = ref.read(dioProvider);
+  final res = await dio.get('/playlists/user/$userId');
+  return (res.data as List).map((e) => Playlist.fromJson(e)).toList();
+});
+
 // جزئیات یک پلی‌لیست با آهنگ‌هاش
 final playlistDetailProvider =
     FutureProvider.family<Playlist, String>((ref, id) async {
