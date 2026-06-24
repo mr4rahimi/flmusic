@@ -24,8 +24,7 @@ import { TracksService } from './tracks.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { audioMulterConfig, imageMulterConfig } from '../../config/upload.config';
-import { join } from 'path';
+import { combinedTrackStorage, audioMulterConfig } from '../../config/upload.config';
 
 @ApiTags('Tracks')
 @Controller('tracks')
@@ -44,7 +43,7 @@ export class TracksController {
         { name: 'cover', maxCount: 1 },
       ],
       {
-        storage: audioMulterConfig.storage,
+        storage: combinedTrackStorage,
         limits: audioMulterConfig.limits,
       },
     ),
@@ -60,12 +59,15 @@ export class TracksController {
   ) {
     const audioFile = files.audio?.[0];
     const coverFile = files.cover?.[0];
+    const coverRelativePath = coverFile
+      ? `uploads/covers/${coverFile.filename}`
+      : undefined;
 
     return this.tracksService.create(
       req.user.id,
       dto,
       audioFile?.path || '',
-      coverFile?.path,
+      coverRelativePath,
     );
   }
 

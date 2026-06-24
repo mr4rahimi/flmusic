@@ -9,6 +9,7 @@ import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/notifications/presentation/providers/notifications_provider.dart';
 import '../../features/upload/presentation/screens/upload_screen.dart';
+import '../../features/upload/presentation/providers/upload_provider.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/player/presentation/widgets/mini_player.dart';
 import '../theme/app_theme.dart';
@@ -93,17 +94,45 @@ class MainShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authUser = ref.watch(authStateProvider).value;
     final unreadAsync = ref.watch(unreadCountProvider);
+    final uploadState = ref.watch(uploadProvider);
     final index = _currentIndex(location);
+    final isUploading = uploadState.status == UploadStatus.uploading ||
+        uploadState.status == UploadStatus.processing;
+
+    ref.listen(uploadProvider, (prev, next) {
+      if (next.status == UploadStatus.done) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('آهنگ با موفقیت آپلود شد ✓'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        ref.read(uploadProvider.notifier).reset();
+      } else if (next.status == UploadStatus.error &&
+          prev?.status != UploadStatus.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در آپلود: ${next.error ?? "خطای ناشناخته"}'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        ref.read(uploadProvider.notifier).reset();
+      }
+    });
 
     return Scaffold(
       body: child,
-      floatingActionButton: MediaQuery.of(context).viewInsets.bottom > 0
-        ? null
-        : _UploadFAB(onTap: () => context.push('/upload')),
+      floatingActionButton: MediaQuery.of(context).viewInsets.bottom > 0 ||
+              isUploading
+          ? null
+          : _UploadFAB(onTap: () => context.push('/upload')),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (isUploading) _UploadProgressBanner(state: uploadState),
           const MiniPlayer(),
           _BottomNav(
             index: index,
@@ -120,6 +149,66 @@ class MainShell extends ConsumerWidget {
               }
             },
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UploadProgressBanner extends StatelessWidget {
+  final UploadState state;
+  const _UploadProgressBanner({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final isProcessing = state.status == UploadStatus.processing;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      color: AppColors.darkSurface,
+      child: Row(
+        children: [
+          Icon(
+            isProcessing
+                ? Icons.equalizer_rounded
+                : Icons.cloud_upload_rounded,
+            color: AppColors.primary,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isProcessing ? 'در حال پردازش...' : 'در حال آپلود...',
+                  style: const TextStyle(
+                      color: AppColors.darkTextPrimary, fontSize: 11),
+                ),
+                const SizedBox(height: 3),
+                LinearProgressIndicator(
+                  value: isProcessing ? null : state.progress,
+                  backgroundColor: AppColors.darkCard,
+                  valueColor:
+                      const AlwaysStoppedAnimation(AppColors.primary),
+                  minHeight: 3,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ],
+            ),
+          ),
+          if (!isProcessing)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                '${(state.progress * 100).toInt()}%',
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
         ],
       ),
     );

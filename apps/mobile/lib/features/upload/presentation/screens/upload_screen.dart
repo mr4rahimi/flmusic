@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -118,24 +119,27 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
     final notifier = ref.read(uploadProvider.notifier);
 
     if (isFile) {
-      await notifier.uploadFromFile(
+      unawaited(notifier.uploadFromFile(
         filePath: _audioFilePath!,
         title: _titleController.text.trim(),
         artistName: _artistController.text.trim(),
+        coverPath: _coverPath,
         tags: _tags,
         description: _descController.text.trim(),
         visibility: _visibility,
-      );
+      ));
     } else {
-      await notifier.uploadFromUrl(
+      unawaited(notifier.uploadFromUrl(
         url: _urlController.text.trim(),
         title: _titleController.text.trim(),
         artistName: _artistController.text.trim(),
         tags: _tags,
         description: _descController.text.trim(),
         visibility: _visibility,
-      );
+      ));
     }
+
+    if (mounted) context.go('/feed');
   }
 
   void _showError(String msg) {
@@ -152,38 +156,18 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
   Widget build(BuildContext context) {
     final uploadState = ref.watch(uploadProvider);
 
-    // وقتی done شد برگرد
-    ref.listen(uploadProvider, (prev, next) {
-      if (next.status == UploadStatus.done) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('آهنگ با موفقیت آپلود شد! ✓'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        ref.read(uploadProvider.notifier).reset();
-        context.go('/feed');
-      }
-    });
-
-    final isLoading = uploadState.status == UploadStatus.uploading ||
-        uploadState.status == UploadStatus.processing;
-
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       appBar: AppBar(
         title: const Text('افزودن آهنگ'),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
-          onPressed: isLoading ? null : () => context.pop(),
+          onPressed: () => context.pop(),
         ),
       ),
-      body: isLoading
-          ? _buildLoadingView(uploadState)
-          : uploadState.status == UploadStatus.error
-              ? _buildErrorView(uploadState)
-              : _buildForm(),
+      body: uploadState.status == UploadStatus.error
+          ? _buildErrorView(uploadState)
+          : _buildForm(),
     );
   }
 

@@ -1,4 +1,5 @@
 import { diskStorage } from 'multer';
+import { existsSync, mkdirSync } from 'fs';
 import { extname, join } from 'path';
 import { BadRequestException } from '@nestjs/common';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -40,6 +41,26 @@ export const audioMulterConfig = {
     }
   },
 };
+
+// Combined storage for tracks endpoint — routes audio to original/, covers to covers/
+export const combinedTrackStorage = diskStorage({
+  destination: (_req: any, file: any, cb: any) => {
+    const dir =
+      file.fieldname === 'cover'
+        ? join(UPLOAD_DIR, 'covers')
+        : join(UPLOAD_DIR, 'original');
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req: any, file: any, cb: any) => {
+    if (file.fieldname === 'cover') {
+      const ext = extname(file.originalname) || '.jpg';
+      cb(null, `${uuidv4()}${ext}`);
+    } else {
+      cb(null, `${uuidv4()}.tmp`);
+    }
+  },
+});
 
 export const imageMulterConfig = {
   storage: diskStorage({
