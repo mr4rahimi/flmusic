@@ -1,4 +1,3 @@
-import 'package:audio_service/audio_service.dart' show MediaItem;
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -38,7 +37,7 @@ class MusicAudioHandler {
     _configureAudioSession();
     _player.setLoopMode(LoopMode.all);
 
-    // When just_audio auto-advances (via ConcatenatingAudioSource), notify UI
+    // Notify UI when just_audio auto-advances (ConcatenatingAudioSource)
     _player.currentIndexStream.listen((index) {
       if (index != null && index != _currentIndex) {
         _currentIndex = index;
@@ -66,15 +65,17 @@ class MusicAudioHandler {
     _currentIndex = startIndex;
     _playlistSet = false;
 
+    // Map tags: just_audio 0.10.x passes these to media3 MediaMetadata
+    // which powers the system notification title/artist/artwork
     final sources = items.map((item) => AudioSource.uri(
       Uri.parse(item.url),
-      tag: MediaItem(
-        id: item.id,
-        title: item.title,
-        artist: item.artist,
-        artUri: item.artUri != null ? Uri.tryParse(item.artUri!) : null,
-        duration: item.duration,
-      ),
+      tag: {
+        'id': item.id,
+        'title': item.title,
+        'artist': item.artist,
+        'artUri': item.artUri,
+        'duration': item.duration?.inMilliseconds,
+      },
     )).toList();
 
     await _playlist.clear();

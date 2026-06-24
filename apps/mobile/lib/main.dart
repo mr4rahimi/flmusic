@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'core/theme/app_theme.dart';
@@ -12,14 +11,6 @@ import 'features/player/presentation/providers/player_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.music.app.audio',
-    androidNotificationChannelName: 'Music Playback',
-    androidNotificationIcon: 'drawable/ic_notification',
-    androidNotificationOngoing: true,
-    androidStopForegroundOnPause: false,
-  );
 
   if (Platform.isAndroid) {
     await Permission.notification.request();
