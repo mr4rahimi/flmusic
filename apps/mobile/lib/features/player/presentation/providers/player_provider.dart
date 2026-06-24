@@ -108,7 +108,7 @@ class PlayerController {
         duration: t.duration != null ? Duration(seconds: t.duration!) : null,
       );
     }).toList();
-    _handler.syncQueue(audioItems, startIndex);
+    await _handler.syncQueue(audioItems, startIndex);
 
     await _playTrack(tracks[startIndex]);
   }

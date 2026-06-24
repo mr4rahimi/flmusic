@@ -15,7 +15,8 @@ dependencies:
   go_router: ^15.1.2
   dio: ^5.9.2
   flutter_secure_storage: ^9.2.4
-  just_audio: ^0.10.5
+  just_audio: ^0.9.36
+  just_audio_background: ^0.0.1-beta.12
   audio_service: ^0.18.14
   audio_session: ^0.1.22
   cached_network_image: ^3.4.1

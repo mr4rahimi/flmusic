@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'core/theme/app_theme.dart';
@@ -13,40 +13,25 @@ import 'features/player/presentation/providers/player_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.music.app.audio',
+    androidNotificationChannelName: 'Music Playback',
+    androidNotificationIcon: 'drawable/ic_notification',
+    androidNotificationOngoing: true,
+    androidStopForegroundOnPause: false,
+  );
+
   if (Platform.isAndroid) {
-    // Notification permission (Android 13+)
     await Permission.notification.request();
-    // Battery optimization exemption — needed so foreground service isn't killed
-    // by aggressive OEM battery management (MIUI, ColorOS, One UI, etc.)
     final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
     if (!batteryStatus.isGranted) {
       await Permission.ignoreBatteryOptimizations.request();
     }
   }
 
-  MusicAudioHandler audioHandler;
-  try {
-    audioHandler = await AudioService.init(
-      builder: () => MusicAudioHandler(),
-      config: AudioServiceConfig(
-        androidNotificationChannelId: 'com.music.app.audio',
-        androidNotificationChannelName: 'Music Playback',
-        androidNotificationIcon: 'drawable/ic_notification',
-        androidShowNotificationBadge: true,
-        androidStopForegroundOnPause: false,
-        androidNotificationOngoing: true,
-        notificationColor: const Color(0xFFF97316),
-      ),
-    ).timeout(const Duration(seconds: 30));
-  } catch (_) {
-    audioHandler = MusicAudioHandler();
-  }
-
   timeago.setLocaleMessages('fa', timeago.FaMessages());
   runApp(ProviderScope(
-    overrides: [
-      audioHandlerProvider.overrideWithValue(audioHandler),
-    ],
+    overrides: [audioHandlerProvider.overrideWithValue(MusicAudioHandler())],
     child: const MusicApp(),
   ));
 }
