@@ -116,30 +116,41 @@ class _UploadScreenState extends ConsumerState<UploadScreen>
       return;
     }
 
+    // Capture all values before navigation
     final notifier = ref.read(uploadProvider.notifier);
+    final filePath = _audioFilePath;
+    final url = _urlController.text.trim();
+    final title = _titleController.text.trim();
+    final artistName = _artistController.text.trim();
+    final coverPath = _coverPath;
+    final tags = List<String>.from(_tags);
+    final description = _descController.text.trim();
+    final visibility = _visibility;
 
+    // Navigate away first so user is not blocked
+    if (mounted) context.go('/feed');
+
+    // Start upload after navigation
     if (isFile) {
       unawaited(notifier.uploadFromFile(
-        filePath: _audioFilePath!,
-        title: _titleController.text.trim(),
-        artistName: _artistController.text.trim(),
-        coverPath: _coverPath,
-        tags: _tags,
-        description: _descController.text.trim(),
-        visibility: _visibility,
+        filePath: filePath!,
+        title: title,
+        artistName: artistName,
+        coverPath: coverPath,
+        tags: tags,
+        description: description,
+        visibility: visibility,
       ));
     } else {
       unawaited(notifier.uploadFromUrl(
-        url: _urlController.text.trim(),
-        title: _titleController.text.trim(),
-        artistName: _artistController.text.trim(),
-        tags: _tags,
-        description: _descController.text.trim(),
-        visibility: _visibility,
+        url: url,
+        title: title,
+        artistName: artistName,
+        tags: tags,
+        description: description,
+        visibility: visibility,
       ));
     }
-
-    if (mounted) context.go('/feed');
   }
 
   void _showError(String msg) {
