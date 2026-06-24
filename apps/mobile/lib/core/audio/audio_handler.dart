@@ -29,21 +29,51 @@ class MusicAudioHandler extends BaseAudioHandler with SeekHandler {
   int _currentIndex = 0;
   RepeatMode _repeatMode = RepeatMode.all;
 
-  // Callback to notify provider when track changes via notification/auto-next
   void Function(int index)? _onIndexChanged;
 
   MusicAudioHandler() {
     _configureAudioSession();
-    _player.playbackEventStream.listen(
-      (_) => _broadcastState(),
-      onError: (_, __) {},
-    );
+    _notifyPlaybackEvents();
+    _listenForCompletion();
+    _listenForDurationChanges();
+  }
+
+  // Pattern from audio_service official example: pipe events directly
+  void _notifyPlaybackEvents() {
+    _player.playbackEventStream.listen((event) {
+      final playing = _player.playing;
+      playbackState.add(playbackState.value.copyWith(
+        controls: [
+          MediaControl.skipToPrevious,
+          if (playing) MediaControl.pause else MediaControl.play,
+          MediaControl.skipToNext,
+        ],
+        systemActions: const {MediaAction.seek},
+        androidCompactActionIndices: const [0, 1, 2],
+        processingState: const {
+          ProcessingState.idle: AudioProcessingState.idle,
+          ProcessingState.loading: AudioProcessingState.loading,
+          ProcessingState.buffering: AudioProcessingState.buffering,
+          ProcessingState.ready: AudioProcessingState.ready,
+          ProcessingState.completed: AudioProcessingState.completed,
+        }[_player.processingState]!,
+        playing: playing,
+        updatePosition: _player.position,
+        bufferedPosition: _player.bufferedPosition,
+        speed: _player.speed,
+      ));
+    }, onError: (_, __) {});
+  }
+
+  void _listenForCompletion() {
     _player.playerStateStream.listen((state) {
-      _broadcastState();
       if (state.processingState == ProcessingState.completed) {
         _handleCompleted();
       }
     });
+  }
+
+  void _listenForDurationChanges() {
     _player.durationStream.listen((duration) {
       final current = mediaItem.value;
       if (current != null && duration != null) {
@@ -52,7 +82,6 @@ class MusicAudioHandler extends BaseAudioHandler with SeekHandler {
     });
   }
 
-  // Called by PlayerController when queue changes
   void syncQueue(List<AudioQueueItem> items, int startIndex) {
     _queue = List.of(items);
     _currentIndex = startIndex;
@@ -74,14 +103,13 @@ class MusicAudioHandler extends BaseAudioHandler with SeekHandler {
     Duration? duration,
   }) async {
     _currentIndex = queueIndex;
-    final item = MediaItem(
+    mediaItem.add(MediaItem(
       id: id,
       title: title,
       artist: artist,
       artUri: artUri != null ? Uri.tryParse(artUri) : null,
       duration: duration,
-    );
-    mediaItem.add(item);
+    ));
     await _player.setUrl(url);
     await _player.play();
   }
@@ -155,41 +183,8 @@ class MusicAudioHandler extends BaseAudioHandler with SeekHandler {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
     session.interruptionEventStream.listen((event) {
-      if (event.begin) {
-        pause();
-      } else if (event.type == AudioInterruptionType.pause) {
-        play();
-      }
+      if (event.begin) pause();
+      else if (event.type == AudioInterruptionType.pause) play();
     });
-  }
-
-  void _broadcastState() {
-    final playing = _player.playing;
-    final processingState = _mapProcessingState(_player.processingState);
-
-    playbackState.add(PlaybackState(
-      controls: [
-        MediaControl.skipToPrevious,
-        if (playing) MediaControl.pause else MediaControl.play,
-        MediaControl.skipToNext,
-      ],
-      systemActions: const {MediaAction.seek},
-      androidCompactActionIndices: const [0, 1, 2],
-      processingState: processingState,
-      playing: playing,
-      updatePosition: _player.position,
-      bufferedPosition: _player.bufferedPosition,
-      speed: _player.speed,
-    ));
-  }
-
-  AudioProcessingState _mapProcessingState(ProcessingState state) {
-    return switch (state) {
-      ProcessingState.idle => AudioProcessingState.idle,
-      ProcessingState.loading => AudioProcessingState.loading,
-      ProcessingState.buffering => AudioProcessingState.buffering,
-      ProcessingState.ready => AudioProcessingState.ready,
-      ProcessingState.completed => AudioProcessingState.completed,
-    };
   }
 }

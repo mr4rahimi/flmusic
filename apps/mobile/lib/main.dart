@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
@@ -23,13 +22,14 @@ void main() async {
   try {
     audioHandler = await AudioService.init(
       builder: () => MusicAudioHandler(),
-      config: const AudioServiceConfig(
+      config: AudioServiceConfig(
         androidNotificationChannelId: 'com.music.app.audio',
         androidNotificationChannelName: 'Music Playback',
-        androidNotificationIcon: 'mipmap/ic_launcher',
+        androidNotificationIcon: 'drawable/ic_notification',
         androidShowNotificationBadge: true,
         androidStopForegroundOnPause: false,
-        notificationColor: Color(0xFFF97316),
+        androidNotificationOngoing: true,
+        notificationColor: const Color(0xFFF97316),
       ),
     ).timeout(const Duration(seconds: 30));
   } catch (_) {
