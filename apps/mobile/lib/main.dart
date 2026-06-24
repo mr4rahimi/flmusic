@@ -13,9 +13,15 @@ import 'features/player/presentation/providers/player_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Request notification permission (required for Android 13+)
   if (Platform.isAndroid) {
+    // Notification permission (Android 13+)
     await Permission.notification.request();
+    // Battery optimization exemption — needed so foreground service isn't killed
+    // by aggressive OEM battery management (MIUI, ColorOS, One UI, etc.)
+    final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
+    if (!batteryStatus.isGranted) {
+      await Permission.ignoreBatteryOptimizations.request();
+    }
   }
 
   MusicAudioHandler audioHandler;
