@@ -122,13 +122,12 @@ class MainShell extends ConsumerWidget {
       }
     });
 
+    final fab = MediaQuery.of(context).viewInsets.bottom > 0 || isUploading
+        ? null
+        : _UploadFAB(onTap: () => context.push('/upload'));
+
     return Scaffold(
       body: child,
-      floatingActionButton: MediaQuery.of(context).viewInsets.bottom > 0 ||
-              isUploading
-          ? null
-          : _UploadFAB(onTap: () => context.push('/upload')),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -137,6 +136,7 @@ class MainShell extends ConsumerWidget {
           _BottomNav(
             index: index,
             unreadCount: unreadAsync.value ?? 0,
+            fab: fab,
             onTap: (i) {
               switch (i) {
                 case 0: context.go('/feed');
@@ -272,12 +272,14 @@ class _UploadFABState extends State<_UploadFAB> {
 class _BottomNav extends StatelessWidget {
   final int index;
   final int unreadCount;
+  final Widget? fab;
   final void Function(int) onTap;
 
   const _BottomNav({
     required this.index,
     required this.unreadCount,
     required this.onTap,
+    this.fab,
   });
 
   @override
@@ -316,7 +318,11 @@ class _BottomNav extends StatelessWidget {
                 isActive: index == 1,
                 onTap: () => onTap(1),
               ),
-              const SizedBox(width: 56), // فضای FAB
+              SizedBox(
+                width: 56,
+                height: 60,
+                child: Center(child: fab ?? const SizedBox(width: 56, height: 56)),
+              ),
               _NavBtnBadge(
                 icon: Icons.notifications_outlined,
                 activeIcon: Icons.notifications_rounded,
