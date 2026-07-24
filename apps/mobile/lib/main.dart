@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -20,9 +21,29 @@ void main() async {
     }
   }
 
+  // این خط چیزی بود که کم داشتیم:
+  // AudioService سرویس foreground اندروید را بالا می‌آورد و
+  // نوتیفیکیشن + کنترل‌های لاک‌اسکرین را می‌سازد.
+  final audioHandler = await AudioService.init(
+    builder: () => MusicAudioHandler(),
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'com.music.app.audio',
+      androidNotificationChannelName: 'Music Playback',
+      androidNotificationChannelDescription: 'کنترل پخش موسیقی',
+      androidNotificationIcon: 'mipmap/ic_launcher',
+      androidNotificationOngoing: false,
+      androidStopForegroundOnPause: false,
+      androidShowNotificationBadge: false,
+      notificationColor: Color(0xFFF97316),
+    ),
+  );
+
   timeago.setLocaleMessages('fa', timeago.FaMessages());
+
   runApp(ProviderScope(
-    overrides: [audioHandlerProvider.overrideWithValue(MusicAudioHandler())],
+    overrides: [
+      audioHandlerProvider.overrideWithValue(audioHandler),
+    ],
     child: const MusicApp(),
   ));
 }

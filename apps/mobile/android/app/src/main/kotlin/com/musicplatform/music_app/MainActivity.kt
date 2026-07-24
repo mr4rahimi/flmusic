@@ -4,11 +4,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import android.os.Bundle
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : FlutterActivity() {
+class MainActivity : AudioServiceActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Create channel BEFORE Flutter engine so audio_service inherits our settings
+        // کانال را قبل از موتور Flutter بساز تا audio_service همین تنظیمات را بردارد
         createMusicNotificationChannel()
         super.onCreate(savedInstanceState)
     }

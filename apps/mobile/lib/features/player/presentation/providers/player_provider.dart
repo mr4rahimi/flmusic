@@ -38,24 +38,15 @@ class PlayerController {
   MusicAudioHandler get _handler => _ref.read(audioHandlerProvider);
 
   void _init() {
-    final player = _handler.player;
-
-    // Sync UI state from player events
     final sub = player.playerStateStream.listen((state) {
-      _ref.read(isPlayingProvider.notifier).state = state.playing;
+      final ps = state.processingState;
 
-      switch (state.processingState) {
-        case ProcessingState.loading:
-        case ProcessingState.buffering:
-          _ref.read(isLoadingProvider.notifier).state = true;
-        case ProcessingState.ready:
-          _ref.read(isLoadingProvider.notifier).state = false;
-        case ProcessingState.completed:
-          _ref.read(isLoadingProvider.notifier).state = false;
-          _ref.read(isPlayingProvider.notifier).state = false;
-        case ProcessingState.idle:
-          break;
-      }
+      _ref.read(isPlayingProvider.notifier).state =
+          state.playing && ps != ProcessingState.completed;
+
+      _ref.read(isLoadingProvider.notifier).state =
+          ps == ProcessingState.loading ||
+          (ps == ProcessingState.buffering && !state.playing);
     });
 
     // When handler auto-advances (notification/lock screen/auto-next),
@@ -65,7 +56,6 @@ class PlayerController {
       if (index >= 0 && index < queue.length) {
         _ref.read(currentIndexProvider.notifier).state = index;
         _ref.read(currentTrackProvider.notifier).state = queue[index];
-        _ref.read(isLoadingProvider.notifier).state = true;
         _postPlayCount(queue[index].id);
       }
     });
@@ -79,7 +69,18 @@ class PlayerController {
     }
   }
 
+  String? _lastCountedId;
+  DateTime? _lastCountedAt;
+
   Future<void> _postPlayCount(String trackId) async {
+    final now = DateTime.now();
+    if (_lastCountedId == trackId &&
+        _lastCountedAt != null &&
+        now.difference(_lastCountedAt!) < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastCountedId = trackId;
+    _lastCountedAt = now;
     try {
       await _ref.read(dioProvider).post('/tracks/$trackId/play');
     } catch (_) {}
@@ -118,8 +119,6 @@ class PlayerController {
 
     final queueIndex = _ref.read(currentIndexProvider);
     _ref.read(currentTrackProvider.notifier).state = track;
-    _ref.read(isLoadingProvider.notifier).state = true;
-    _ref.read(isPlayingProvider.notifier).state = false;
 
     final base = baseUrl.replaceAll('/api/v1', '');
     final audioUrl = track.audioUrl!;
@@ -142,9 +141,7 @@ class PlayerController {
         duration: track.duration != null ? Duration(seconds: track.duration!) : null,
       );
       await _postPlayCount(track.id);
-    } catch (_) {
-      _ref.read(isLoadingProvider.notifier).state = false;
-    }
+    } catch (_) {}
   }
 
   Future<void> togglePlayPause() async {
