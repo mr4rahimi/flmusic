@@ -79,6 +79,46 @@ export class FeedService {
     return this.buildPaginatedResult(items, total, page, limit);
   }
 
+  /**
+   * آهنگ‌های یک سبک — برای صفحات دسته‌بندی نسخه‌ی وب.
+   * مقایسه بدون حساسیت به حروف بزرگ/کوچک انجام می‌شود.
+   */
+  async getGenreFeed(genre: string, page = 1, limit = 24) {
+    const [items, total] = await this.trackRepo
+      .createQueryBuilder('track')
+      .innerJoinAndSelect('track.user', 'user')
+      .where('track.visibility = :vis', { vis: TrackVisibility.PUBLIC })
+      .andWhere('track.status = :status', { status: TrackStatus.READY })
+      .andWhere('LOWER(track.genre) = LOWER(:genre)', { genre })
+      .orderBy('track.playCount', 'DESC')
+      .addOrderBy('track.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return this.buildPaginatedResult(items, total, page, limit);
+  }
+
+  /**
+   * فهرست سبک‌های موجود به‌همراه تعداد آهنگ هرکدام.
+   * صفحه‌ی فهرست سبک‌ها و sitemap از این استفاده می‌کنند.
+   */
+  async getGenres(): Promise<{ genre: string; count: number }[]> {
+    const rows = await this.trackRepo
+      .createQueryBuilder('track')
+      .select('track.genre', 'genre')
+      .addSelect('COUNT(*)', 'count')
+      .where('track.visibility = :vis', { vis: TrackVisibility.PUBLIC })
+      .andWhere('track.status = :status', { status: TrackStatus.READY })
+      .andWhere('track.genre IS NOT NULL')
+      .andWhere("track.genre <> ''")
+      .groupBy('track.genre')
+      .orderBy('count', 'DESC')
+      .getRawMany<{ genre: string; count: string }>();
+
+    return rows.map((row) => ({ genre: row.genre, count: Number(row.count) }));
+  }
+
   private buildPaginatedResult(
     items: Track[],
     total: number,

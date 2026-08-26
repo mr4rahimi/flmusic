@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-vazirmatn), system-ui, sans-serif;
+  --color-background: #0a0a0a;
+  --color-foreground: #ededed;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+/* اعداد در متن فارسی راست‌چین درست بنشینند */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* احترام به تنظیم کاهش حرکت سیستم‌عامل */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

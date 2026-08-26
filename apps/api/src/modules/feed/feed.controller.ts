@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Param,
   Query,
   UseGuards,
   Request,
@@ -42,6 +43,24 @@ export class FeedController {
     @Query('limit') limit = 20,
   ) {
     return this.feedService.getTrendingFeed(+page, +limit);
+  }
+
+  @Get('genres')
+  @ApiOperation({ summary: 'List available genres with track counts' })
+  getGenres() {
+    return this.feedService.getGenres();
+  }
+
+  @Get('genre/:genre')
+  @ApiOperation({ summary: 'Get tracks of a genre' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getGenreFeed(
+    @Param('genre') genre: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 24,
+  ) {
+    return this.feedService.getGenreFeed(genre, +page, +limit);
   }
 
   @Get('new')
