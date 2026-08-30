@@ -91,7 +91,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const artwork = mediaUrl(current.coverUrl);
     navigator.mediaSession.metadata = new MediaMetadata({
       title: current.title,
-      artist: current.user?.username ?? '',
+      artist: current.genre?.trim() || current.user?.username || '',
       artwork: artwork ? [{ src: artwork, sizes: '512x512' }] : [],
     });
   }, [current]);

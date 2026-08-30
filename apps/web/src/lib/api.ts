@@ -1,4 +1,5 @@
 import { API_URL, REVALIDATE } from './env';
+import { singerOf, stylesOf } from './types';
 import type { Playlist, Profile, SearchResults, Track } from './types';
 
 /** خطای HTTP همراه با کد وضعیت تا صفحات بتوانند ۴۰۴ واقعی برگردانند. */
@@ -61,6 +62,25 @@ function toList<T>(payload: unknown): T[] {
   return [];
 }
 
+/** یک ردیف از فهرست‌های دسته‌بندی (خواننده یا سبک) به‌همراه تعداد آهنگ. */
+export interface Facet {
+  name: string;
+  count: number;
+}
+
+/** آهنگ‌ها را بر اساس کلیدهای استخراج‌شده می‌شمارد و نزولی مرتب می‌کند. */
+function countBy(tracks: Track[], keysOf: (track: Track) => string[]): Facet[] {
+  const counts = new Map<string, number>();
+  for (const track of tracks) {
+    for (const key of keysOf(track)) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'fa'));
+}
+
 /**
  * فقط برای endpointهایی که موجودیت کامل برمی‌گردانند.
  * خروجی feed و search سمت سرور فیلتر شده و اصلاً فیلد visibility/status ندارد،
@@ -95,40 +115,92 @@ export async function getNewTracks(page = 1, limit = 24): Promise<Track[]> {
 }
 
 /**
- * آهنگ‌های یک سبک. سمت API با endpoint اختصاصی پاسخ داده می‌شود؛
- * اگر آن endpoint هنوز روی سرور مستقر نشده باشد، به فیلتر روی
- * جدیدترین‌ها برمی‌گردیم تا صفحه خالی نماند.
+ * نمونه‌ای از جدیدترین آهنگ‌ها برای ساختن فهرست‌های دسته‌بندی وقتی API
+ * endpoint تجمیعی ندارد. روی سرور پروداکشن `/feed/genres` هنوز ۴۰۴ می‌دهد،
+ * پس در عمل همین مسیر اجرا می‌شود — جزئیات در docs/05-api-integration.md.
  */
-export async function getTracksByGenre(genre: string, limit = 48): Promise<Track[]> {
+const SAMPLE_SIZE = 300;
+
+async function sampleTracks(size = SAMPLE_SIZE): Promise<Track[]> {
+  const batches = await Promise.all(
+    Array.from({ length: Math.ceil(size / 100) }, (_, i) =>
+      getNewTracks(i + 1, 100),
+    ),
+  );
+  return batches.flat();
+}
+
+/**
+ * آهنگ‌های یک خواننده.
+ *
+ * ⚠️ ستون `genre` در API در عمل «نام خواننده» را نگه می‌دارد (توضیح در
+ * `types.ts`)، پس endpointهای `/feed/genre*` منبع داده‌ی صفحات خواننده‌اند.
+ * اگر endpoint اختصاصی روی سرور نباشد، به فیلتر روی جدیدترین‌ها برمی‌گردیم
+ * تا صفحه خالی نماند.
+ */
+export async function getTracksBySinger(singer: string, limit = 48): Promise<Track[]> {
   try {
     const payload = await apiGet<unknown>(
-      `/feed/genre/${encodeURIComponent(genre)}?limit=${limit}`,
-      { tags: [`genre:${genre}`] },
+      `/feed/genre/${encodeURIComponent(singer)}?limit=${limit}`,
+      { tags: [`singer:${singer}`] },
     );
     return toList<Track>(payload);
   } catch {
-    const recent = await getNewTracks(1, 100);
-    const needle = genre.toLowerCase();
-    return recent.filter((t) => (t.genre ?? '').toLowerCase() === needle).slice(0, limit);
+    const needle = singer.toLowerCase();
+    return (await sampleTracks())
+      .filter((t) => (singerOf(t) ?? '').toLowerCase() === needle)
+      .slice(0, limit);
   }
 }
 
-/** فهرست سبک‌های موجود به‌همراه تعداد — برای صفحه‌ی دسته‌بندی و sitemap. */
-export async function getGenres(): Promise<{ genre: string; count: number }[]> {
+/** فهرست خواننده‌ها به‌همراه تعداد آهنگ — برای صفحه‌ی /artists و sitemap. */
+export async function getSingers(): Promise<Facet[]> {
   try {
-    return await apiGet<{ genre: string; count: number }[]>('/feed/genres', {
-      tags: ['genres'],
+    const rows = await apiGet<{ genre: string; count: number }[]>('/feed/genres', {
+      tags: ['singers'],
     });
+    return rows
+      .filter((row) => row.genre?.trim())
+      .map((row) => ({ name: row.genre.trim(), count: row.count }));
   } catch {
-    // fallback: از روی جدیدترین‌ها سبک‌ها را استخراج می‌کنیم
-    const recent = await getNewTracks(1, 100);
-    const counts = new Map<string, number>();
-    for (const track of recent) {
-      if (track.genre) counts.set(track.genre, (counts.get(track.genre) ?? 0) + 1);
-    }
-    return [...counts.entries()]
-      .map(([genre, count]) => ({ genre, count }))
-      .sort((a, b) => b.count - a.count);
+    // fallback: خواننده‌ها را از روی نمونه‌ی جدیدترین‌ها استخراج می‌کنیم
+    return countBy(await sampleTracks(), (track) => {
+      const singer = singerOf(track);
+      return singer ? [singer] : [];
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// سبک‌ها — روی `track.tags` سوارند.
+// API فعلاً endpoint اختصاصی ندارد؛ اول امتحانش می‌کنیم و بعد fallback.
+// ---------------------------------------------------------------------------
+
+export async function getStyles(): Promise<Facet[]> {
+  try {
+    const rows = await apiGet<{ tag: string; count: number }[]>('/feed/tags', {
+      tags: ['styles'],
+    });
+    return rows
+      .filter((row) => row.tag?.trim())
+      .map((row) => ({ name: row.tag.trim(), count: row.count }));
+  } catch {
+    return countBy(await sampleTracks(), stylesOf);
+  }
+}
+
+export async function getTracksByStyle(style: string, limit = 48): Promise<Track[]> {
+  try {
+    const payload = await apiGet<unknown>(
+      `/feed/tag/${encodeURIComponent(style)}?limit=${limit}`,
+      { tags: [`style:${style}`] },
+    );
+    return toList<Track>(payload);
+  } catch {
+    const needle = style.toLowerCase();
+    return (await sampleTracks())
+      .filter((track) => stylesOf(track).some((t) => t.toLowerCase() === needle))
+      .slice(0, limit);
   }
 }
 

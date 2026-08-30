@@ -5,9 +5,10 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { Cover } from '@/components/Cover';
 import { JsonLd } from '@/components/JsonLd';
+import { StyleChips } from '@/components/StyleChips';
 import { TrackGrid } from '@/components/TrackGrid';
 import { PlayButton } from '@/components/player/PlayButton';
-import { getTrack, getTracksByUsername } from '@/lib/api';
+import { getTrack, getTracksBySinger } from '@/lib/api';
 import { SITE_NAME } from '@/lib/env';
 import { formatCount, formatDate, formatDuration } from '@/lib/format';
 import { breadcrumbSchema, graph, trackSchema } from '@/lib/jsonld';
@@ -18,6 +19,7 @@ import {
   metaDescription,
   routes,
 } from '@/lib/seo';
+import { singerOf, stylesOf } from '@/lib/types';
 import type { Track } from '@/lib/types';
 
 export const revalidate = 300;
@@ -41,12 +43,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'آهنگ پیدا نشد', robots: { index: false, follow: false } };
   }
 
-  const artist = track.user?.username;
-  const title = artist ? `${track.title} — ${artist}` : track.title;
+  // ستون genre نام خواننده است و tags سبک‌ها — توضیح در lib/types.ts
+  const singer = singerOf(track);
+  const styles = stylesOf(track);
+  const title = singer ? `${track.title} — ${singer}` : track.title;
   const description = metaDescription(
     track.description ||
-      `${track.title}${artist ? ` از ${artist}` : ''} را در ${SITE_NAME} آنلاین بشنوید و دانلود کنید.` +
-        `${track.genre ? ` سبک: ${track.genre}.` : ''}`,
+      `آهنگ ${track.title}${singer ? ` از ${singer}` : ''} را در ${SITE_NAME} آنلاین بشنوید و دانلود کنید.` +
+        `${styles.length ? ` سبک: ${styles.join('، ')}.` : ''}`,
   );
   const canonical = routes.track(track.title, track.id);
   // تصویر ساخته‌شده توسط opengraph-image.tsx همین مسیر.
@@ -61,9 +65,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description,
     alternates: { canonical },
-    keywords: [track.title, artist, track.genre, ...(track.tags ?? [])].filter(
-      Boolean,
-    ) as string[],
+    keywords: [
+      track.title,
+      singer,
+      singer && `دانلود آهنگ ${singer}`,
+      ...styles,
+    ].filter(Boolean) as string[],
     robots: indexable ? undefined : { index: false, follow: true },
     openGraph: {
       type: 'music.song',
@@ -83,7 +90,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     other: {
       // متادیتای اختصاصی OpenGraph برای موسیقی — فیسبوک و تلگرام می‌خوانند
       ...(track.duration ? { 'music:duration': String(track.duration) } : {}),
-      ...(artist ? { 'music:musician': absoluteUrl(routes.artist(artist)) } : {}),
+      ...(singer ? { 'music:musician': absoluteUrl(routes.singer(singer)) } : {}),
     },
   };
 }
@@ -98,14 +105,20 @@ export default async function TrackPage({ params }: PageProps) {
     permanentRedirect(routes.track(track.title, track.id));
   }
 
-  const artist = track.user?.username;
-  const moreByArtist = artist
-    ? (await getTracksByUsername(artist)).filter((item) => item.id !== track.id).slice(0, 5)
+  const singer = singerOf(track);
+  const styles = stylesOf(track);
+  const publisher = track.user?.username;
+
+  // «آهنگ‌های دیگر» یعنی آثار همان خواننده، نه آپلودهای همان حساب کاربری
+  const moreBySinger = singer
+    ? (await getTracksBySinger(singer, 12))
+        .filter((item) => item.id !== track.id)
+        .slice(0, 5)
     : [];
 
   const crumbs = [
     { name: 'خانه', path: routes.home() },
-    ...(artist ? [{ name: artist, path: routes.artist(artist) }] : []),
+    ...(singer ? [{ name: singer, path: routes.singer(singer) }] : []),
     { name: track.title, path: routes.track(track.title, track.id) },
   ];
 
@@ -119,7 +132,7 @@ export default async function TrackPage({ params }: PageProps) {
           <div className="w-full max-w-[280px] shrink-0">
             <Cover
               src={track.coverUrl}
-              alt={artist ? `کاور آهنگ ${track.title} از ${artist}` : `کاور آهنگ ${track.title}`}
+              alt={singer ? `کاور آهنگ ${track.title} از ${singer}` : `کاور آهنگ ${track.title}`}
               sizes="(max-width: 640px) 90vw, 280px"
               priority
             />
@@ -128,11 +141,14 @@ export default async function TrackPage({ params }: PageProps) {
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold sm:text-3xl">{track.title}</h1>
 
-            {artist && (
+            {singer && (
               <p className="mt-1 text-sm text-neutral-400">
-                از{' '}
-                <Link href={routes.artist(artist)} className="text-emerald-400 hover:underline">
-                  {artist}
+                خواننده:{' '}
+                <Link
+                  href={routes.singer(singer)}
+                  className="text-emerald-400 hover:underline"
+                >
+                  {singer}
                 </Link>
               </p>
             )}
@@ -155,39 +171,29 @@ export default async function TrackPage({ params }: PageProps) {
 
             <p className="mt-5 text-xs text-neutral-500">
               منتشر شده در {formatDate(track.createdAt)}
-              {track.genre && (
+              {publisher && (
                 <>
-                  {' · سبک '}
+                  {' · منتشرکننده '}
                   <Link
-                    href={routes.genre(track.genre)}
+                    href={routes.user(publisher)}
                     className="text-emerald-400 hover:underline"
                   >
-                    {track.genre}
+                    {publisher}
                   </Link>
                 </>
               )}
             </p>
 
-            {track.tags && track.tags.length > 0 && (
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {track.tags.map((tag) => (
-                  <li key={tag}>
-                    <span className="rounded-full border border-neutral-800 px-3 py-1 text-[11px] text-neutral-400">
-                      #{tag}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <StyleChips styles={styles} label="سبک" className="mt-4" />
           </div>
         </div>
 
-        {moreByArtist.length > 0 && artist && (
+        {moreBySinger.length > 0 && singer && (
           <section className="mt-14">
             <h2 className="mb-4 text-lg font-semibold">
-              آهنگ‌های دیگر {artist}
+              آهنگ‌های دیگر {singer}
             </h2>
-            <TrackGrid tracks={moreByArtist} />
+            <TrackGrid tracks={moreBySinger} />
           </section>
         )}
       </article>

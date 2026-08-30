@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { AppPromo } from '@/components/AppPromo';
+import { FacetList } from '@/components/FacetList';
 import { JsonLd } from '@/components/JsonLd';
 import { TrackGrid } from '@/components/TrackGrid';
-import { getNewTracks, getTrendingTracks } from '@/lib/api';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '@/lib/env';
+import { getNewTracks, getSingers, getStyles, getTrendingTracks } from '@/lib/api';
+import { APP_NAME, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '@/lib/env';
 import { collectionSchema, graph } from '@/lib/jsonld';
 import { routes } from '@/lib/seo';
 
@@ -17,11 +19,17 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
+/** چند تا از خواننده‌ها و سبک‌ها در صفحه‌ی اصلی لینک شوند (لینک‌سازی داخلی) */
+const TOP_SINGERS = 18;
+const TOP_STYLES = 14;
+
 export default async function HomePage() {
   // موازی، نه پشت‌سرهم — TTFB نصف می‌شود
-  const [trending, newest] = await Promise.all([
+  const [trending, newest, singers, styles] = await Promise.all([
     getTrendingTracks(1, 10),
     getNewTracks(1, 10),
+    getSingers(),
+    getStyles(),
   ]);
 
   return (
@@ -49,7 +57,7 @@ export default async function HomePage() {
 
       <Section
         title="داغ‌ترین آهنگ‌ها"
-        description="پرشنیده‌ترین آهنگ‌های این روزهای فول موزیک."
+        description={`پرشنیده‌ترین آهنگ‌های این روزهای ${SITE_NAME}.`}
         href={routes.trending()}
         tracks={trending}
         priorityCount={5}
@@ -57,11 +65,65 @@ export default async function HomePage() {
 
       <Section
         title="جدیدترین آهنگ‌ها"
-        description="تازه‌ترین آثاری که هنرمندان منتشر کرده‌اند."
+        description={`تازه‌ترین آثاری که کاربران ${APP_NAME} منتشر کرده‌اند.`}
         href={routes.newest()}
         tracks={newest}
       />
+
+      {/* معرفی اپ — پیش از فهرست‌های دسته‌بندی، جایی که کاربر بعد از
+          شنیدن چند آهنگ آماده‌ی نصب است */}
+      <AppPromo />
+
+      {singers.length > 0 && (
+        <FacetSection
+          title="خواننده‌های محبوب"
+          description="آهنگ‌ها را بر اساس خواننده مرور کنید."
+          href={routes.singers()}
+        >
+          <FacetList
+            items={singers.slice(0, TOP_SINGERS)}
+            href={routes.singer}
+            emptyMessage=""
+          />
+        </FacetSection>
+      )}
+
+      {styles.length > 0 && (
+        <FacetSection
+          title="سبک‌های موسیقی"
+          description="عاشقانه، شاد، سنتی و… — سبک دلخواهتان را انتخاب کنید."
+          href={routes.styles()}
+        >
+          <FacetList
+            items={styles.slice(0, TOP_STYLES)}
+            href={routes.style}
+            emptyMessage=""
+          />
+        </FacetSection>
+      )}
     </>
+  );
+}
+
+function SectionHeader({
+  title,
+  description,
+  href,
+}: {
+  title: string;
+  description: string;
+  href: string;
+}) {
+  return (
+    <div className="mb-4 flex items-baseline justify-between gap-4">
+      <div>
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <p className="text-xs text-neutral-500">{description}</p>
+      </div>
+      <Link href={href} className="shrink-0 text-sm text-emerald-400 hover:underline">
+        مشاهده‌ی همه
+      </Link>
+    </div>
   );
 }
 
@@ -80,16 +142,27 @@ function Section({
 }) {
   return (
     <section className="mb-12">
-      <div className="mb-4 flex items-baseline justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <p className="text-xs text-neutral-500">{description}</p>
-        </div>
-        <Link href={href} className="shrink-0 text-sm text-emerald-400 hover:underline">
-          مشاهده‌ی همه
-        </Link>
-      </div>
+      <SectionHeader title={title} description={description} href={href} />
       <TrackGrid tracks={tracks} priorityCount={priorityCount} />
+    </section>
+  );
+}
+
+function FacetSection({
+  title,
+  description,
+  href,
+  children,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mb-12">
+      <SectionHeader title={title} description={description} href={href} />
+      {children}
     </section>
   );
 }

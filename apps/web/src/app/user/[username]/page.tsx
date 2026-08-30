@@ -9,10 +9,10 @@ import { getProfile, getTracksByUsername } from '@/lib/api';
 import { SITE_NAME } from '@/lib/env';
 import { formatCount, formatDate } from '@/lib/format';
 import {
-  artistSchema,
   breadcrumbSchema,
   graph,
   profilePageSchema,
+  userSchema,
 } from '@/lib/jsonld';
 import { absoluteUrl, mediaUrl, metaDescription, routes } from '@/lib/seo';
 
@@ -26,15 +26,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const profile = await getProfile(username);
 
   if (!profile) {
-    return { title: 'هنرمند پیدا نشد', robots: { index: false, follow: false } };
+    return { title: 'کاربر پیدا نشد', robots: { index: false, follow: false } };
   }
 
-  const title = `${profile.username} — آهنگ‌ها و پروفایل`;
+  const title = `${profile.username} — پروفایل کاربر`;
   const description = metaDescription(
     profile.bio ||
-      `صفحه‌ی ${profile.username} در ${SITE_NAME}: ${formatCount(profile.tracksCount)} آهنگ و ${formatCount(profile.followersCount)} دنبال‌کننده. همه‌ی آثار را آنلاین بشنوید.`,
+      `پروفایل کاربری ${profile.username} در ${SITE_NAME}: ${formatCount(profile.tracksCount)} آهنگ منتشرشده و ${formatCount(profile.followersCount)} دنبال‌کننده. همه‌ی آهنگ‌هایی که این کاربر منتشر کرده را آنلاین بشنوید.`,
   );
-  const canonical = routes.artist(profile.username);
+  const canonical = routes.user(profile.username);
   const ogImage = absoluteUrl(`${canonical}/opengraph-image`);
 
   return {
@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ArtistPage({ params }: PageProps) {
+export default async function UserPage({ params }: PageProps) {
   const { username: raw } = await params;
   const username = decodeURIComponent(raw);
 
@@ -74,14 +74,14 @@ export default async function ArtistPage({ params }: PageProps) {
   const avatar = mediaUrl(profile.avatarUrl);
   const crumbs = [
     { name: 'خانه', path: routes.home() },
-    { name: profile.username, path: routes.artist(profile.username) },
+    { name: profile.username, path: routes.user(profile.username) },
   ];
 
   return (
     <>
       <JsonLd
         data={graph(
-          artistSchema(profile, tracks),
+          userSchema(profile, tracks),
           profilePageSchema(profile),
           breadcrumbSchema(crumbs),
         )}
@@ -133,7 +133,7 @@ export default async function ArtistPage({ params }: PageProps) {
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">
-          آهنگ‌های {profile.username}
+          آهنگ‌های منتشرشده توسط {profile.username}
         </h2>
         <TrackGrid
           tracks={tracks}

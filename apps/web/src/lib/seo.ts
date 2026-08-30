@@ -43,11 +43,28 @@ export function isCanonicalSlug(param: string, title: string, id: string): boole
 // ساخت مسیرها — تنها منبع حقیقت برای لینک‌های داخلی و sitemap
 // ---------------------------------------------------------------------------
 
+/**
+ * واژگان مسیرها عمداً با واژگان دیتابیس فرق دارد:
+ *
+ * | مفهوم واقعی            | فیلد API        | مسیر وب              |
+ * |------------------------|-----------------|----------------------|
+ * | خواننده‌ی آهنگ         | `track.genre`   | `/artist/[name]`     |
+ * | سبک / برچسب            | `track.tags`    | `/style/[name]`      |
+ * | حساب کاربری منتشرکننده | `track.user`    | `/user/[username]`   |
+ *
+ * جدول کامل و دلیلش در docs/05-api-integration.md.
+ */
 export const routes = {
   home: () => '/',
   track: (title: string, id: string) => `/track/${buildSlug(title, id)}`,
-  artist: (username: string) => `/artist/${encodeURIComponent(username)}`,
-  genre: (genre: string) => `/genre/${encodeURIComponent(slugify(genre))}`,
+  /** صفحه‌ی خواننده (مقدار `track.genre`) */
+  singer: (name: string) => `/artist/${encodeURIComponent(slugify(name))}`,
+  singers: () => '/artists',
+  /** صفحه‌ی سبک (یکی از `track.tags`) */
+  style: (name: string) => `/style/${encodeURIComponent(slugify(name))}`,
+  styles: () => '/styles',
+  /** پروفایل حساب کاربری فندوق */
+  user: (username: string) => `/user/${encodeURIComponent(username)}`,
   playlist: (title: string, id: string) => `/playlist/${buildSlug(title, id)}`,
   search: (query?: string) =>
     query ? `/search?q=${encodeURIComponent(query)}` : '/search',

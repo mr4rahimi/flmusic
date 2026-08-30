@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePlayer } from './PlayerProvider';
 import { formatDuration } from '@/lib/format';
 import { mediaUrl, routes } from '@/lib/seo';
+import { singerOf } from '@/lib/types';
 
 /** نوار پخش چسبیده به پایین صفحه؛ تا وقتی چیزی پخش نشده رندر نمی‌شود. */
 export function PlayerBar() {
@@ -11,6 +12,7 @@ export function PlayerBar() {
   if (!current) return null;
 
   const cover = mediaUrl(current.coverUrl);
+  const singer = singerOf(current);
   const total = duration || current.duration || 0;
 
   return (
@@ -36,12 +38,12 @@ export function PlayerBar() {
           >
             {current.title}
           </Link>
-          {current.user && (
+          {singer && (
             <Link
-              href={routes.artist(current.user.username)}
+              href={routes.singer(singer)}
               className="block truncate text-xs text-neutral-400 hover:underline"
             >
-              {current.user.username}
+              {singer}
             </Link>
           )}
         </div>

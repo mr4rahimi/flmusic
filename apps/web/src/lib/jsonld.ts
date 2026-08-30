@@ -1,12 +1,17 @@
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from './env';
+import { SITE_ALTERNATE_NAMES, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from './env';
 import { toIsoDuration } from './format';
 import { absoluteUrl, mediaUrl, routes } from './seo';
+import { singerOf, stylesOf } from './types';
 import type { Playlist, Profile, Track } from './types';
 
 /**
  * سازنده‌های Schema.org (JSON-LD).
- * مرجع انتخاب نوع‌ها: MusicRecording برای تک آهنگ، MusicGroup برای هنرمند،
- * MusicPlaylist برای پلی‌لیست، CollectionPage برای صفحات دسته‌بندی.
+ * مرجع انتخاب نوع‌ها: MusicRecording برای تک آهنگ، MusicGroup برای خواننده،
+ * Person برای حساب کاربری، MusicPlaylist برای پلی‌لیست و CollectionPage
+ * برای صفحات دسته‌بندی.
+ *
+ * ⚠️ نگاشت فیلدها: `byArtist` از `track.genre` (نام خواننده) ساخته می‌شود و
+ * `genre` از `track.tags` (سبک‌ها) — نه برعکس. دلیلش در types.ts آمده.
  */
 
 type JsonLd = Record<string, unknown>;
@@ -19,6 +24,7 @@ export function organizationSchema(): JsonLd {
     '@type': 'Organization',
     '@id': ORGANIZATION_ID,
     name: SITE_NAME,
+    alternateName: SITE_ALTERNATE_NAMES,
     url: SITE_URL,
     description: SITE_DESCRIPTION,
     logo: {
@@ -34,6 +40,7 @@ export function websiteSchema(): JsonLd {
     '@type': 'WebSite',
     '@id': WEBSITE_ID,
     name: SITE_NAME,
+    alternateName: SITE_ALTERNATE_NAMES,
     url: SITE_URL,
     inLanguage: 'fa-IR',
     description: SITE_DESCRIPTION,
@@ -64,7 +71,8 @@ export function breadcrumbSchema(
 }
 
 export function trackSchema(track: Track): JsonLd {
-  const artist = track.user?.username;
+  const singer = singerOf(track);
+  const styles = stylesOf(track);
   const url = absoluteUrl(routes.track(track.title, track.id));
 
   return {
@@ -76,15 +84,25 @@ export function trackSchema(track: Track): JsonLd {
     duration: toIsoDuration(track.duration),
     datePublished: track.createdAt,
     inLanguage: 'fa-IR',
-    genre: track.genre || undefined,
-    keywords: track.tags?.length ? track.tags.join('، ') : undefined,
+    // سبک واقعی آهنگ در tags ذخیره شده، نه در ستون genre
+    genre: styles.length ? styles : undefined,
+    keywords: [track.title, singer, ...styles].filter(Boolean).join('، '),
     image: mediaUrl(track.coverUrl) || undefined,
     isFamilyFriendly: true,
-    byArtist: artist
+    // خواننده — مقدار ستون genre
+    byArtist: singer
       ? {
           '@type': 'MusicGroup',
-          name: artist,
-          url: absoluteUrl(routes.artist(artist)),
+          name: singer,
+          url: absoluteUrl(routes.singer(singer)),
+        }
+      : undefined,
+    // حساب کاربری‌ای که آهنگ را در فندوق منتشر کرده
+    sourceOrganization: track.user
+      ? {
+          '@type': 'Person',
+          name: track.user.username,
+          url: absoluteUrl(routes.user(track.user.username)),
         }
       : undefined,
     interactionStatistic: [
@@ -117,21 +135,16 @@ export function trackSchema(track: Track): JsonLd {
   };
 }
 
-export function artistSchema(profile: Profile, tracks: Track[]): JsonLd {
-  const url = absoluteUrl(routes.artist(profile.username));
+/** صفحه‌ی خواننده — MusicGroup ساخته‌شده از نام خواننده و آثارش. */
+export function singerSchema(singer: string, tracks: Track[]): JsonLd {
+  const url = absoluteUrl(routes.singer(singer));
 
   return {
     '@type': 'MusicGroup',
-    '@id': `${url}#artist`,
-    name: profile.username,
+    '@id': `${url}#singer`,
+    name: singer,
     url,
-    description: profile.bio || undefined,
-    image: mediaUrl(profile.avatarUrl) || undefined,
-    interactionStatistic: {
-      '@type': 'InteractionCounter',
-      interactionType: 'https://schema.org/FollowAction',
-      userInteractionCount: profile.followersCount ?? 0,
-    },
+    genre: [...new Set(tracks.flatMap(stylesOf))].slice(0, 10),
     track: tracks.slice(0, 20).map((track) => ({
       '@type': 'MusicRecording',
       name: track.title,
@@ -141,15 +154,44 @@ export function artistSchema(profile: Profile, tracks: Track[]): JsonLd {
   };
 }
 
-/** ProfilePage — به گوگل می‌گوید این صفحه پروفایل یک شخص/گروه است. */
+/**
+ * پروفایل کاربر — `Person` نه `MusicGroup`.
+ * صاحب حساب لزوماً خواننده نیست؛ کاربری است که آهنگ را در فندوق منتشر کرده.
+ */
+export function userSchema(profile: Profile, tracks: Track[]): JsonLd {
+  const url = absoluteUrl(routes.user(profile.username));
+
+  return {
+    '@type': 'Person',
+    '@id': `${url}#person`,
+    name: profile.username,
+    alternateName: profile.username,
+    url,
+    description: profile.bio || undefined,
+    image: mediaUrl(profile.avatarUrl) || undefined,
+    interactionStatistic: {
+      '@type': 'InteractionCounter',
+      interactionType: 'https://schema.org/FollowAction',
+      userInteractionCount: profile.followersCount ?? 0,
+    },
+    subjectOf: tracks.slice(0, 20).map((track) => ({
+      '@type': 'MusicRecording',
+      name: track.title,
+      url: absoluteUrl(routes.track(track.title, track.id)),
+      duration: toIsoDuration(track.duration),
+    })),
+  };
+}
+
+/** ProfilePage — به گوگل می‌گوید این صفحه پروفایل یک حساب کاربری است. */
 export function profilePageSchema(profile: Profile): JsonLd {
-  const url = absoluteUrl(routes.artist(profile.username));
+  const url = absoluteUrl(routes.user(profile.username));
   return {
     '@type': 'ProfilePage',
     '@id': `${url}#profilepage`,
     url,
     dateCreated: profile.createdAt,
-    mainEntity: { '@id': `${url}#artist` },
+    mainEntity: { '@id': `${url}#person` },
   };
 }
 
@@ -169,14 +211,14 @@ export function playlistSchema(playlist: Playlist): JsonLd {
       name: track.title,
       url: absoluteUrl(routes.track(track.title, track.id)),
       duration: toIsoDuration(track.duration),
-      byArtist: track.user
-        ? { '@type': 'MusicGroup', name: track.user.username }
+      byArtist: singerOf(track)
+        ? { '@type': 'MusicGroup', name: singerOf(track) }
         : undefined,
     })),
   };
 }
 
-/** صفحات فهرست (ژانر، جدیدترین‌ها، داغ‌ترین‌ها) */
+/** صفحات فهرست (خواننده، سبک، جدیدترین‌ها، داغ‌ترین‌ها) */
 export function collectionSchema(
   title: string,
   description: string,

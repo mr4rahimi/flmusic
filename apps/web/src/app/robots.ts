@@ -4,7 +4,7 @@ import { SITE_URL } from '@/lib/env';
 /**
  * robots.txt
  * صفحات جستجو و مسیرهای خصوصی از ایندکس خارج می‌شوند تا بودجه‌ی خزش
- * صرف صفحات ارزشمند (آهنگ، هنرمند، ژانر) شود.
+ * صرف صفحات ارزشمند (آهنگ، خواننده، سبک) شود.
  */
 export default function robots(): MetadataRoute.Robots {
   return {

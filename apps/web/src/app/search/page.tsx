@@ -18,7 +18,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const { q } = await searchParams;
   return {
     title: q ? `جستجوی «${q}»` : 'جستجو',
-    description: `جستجوی آهنگ و هنرمند در ${SITE_NAME}.`,
+    description: `جستجوی آهنگ، خواننده و کاربر در ${SITE_NAME}.`,
     robots: { index: false, follow: true },
     alternates: { canonical: '/search' },
   };
@@ -39,20 +39,20 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
       {!query && (
         <p className="mt-2 text-sm text-neutral-400">
-          نام آهنگ یا هنرمند را در کادر بالا بنویسید.
+          نام آهنگ، خواننده یا کاربر را در کادر بالا بنویسید.
         </p>
       )}
 
       {query && users.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-4 text-lg font-semibold">هنرمندان</h2>
+          <h2 className="mb-4 text-lg font-semibold">کاربران</h2>
           <ul className="flex flex-wrap gap-4">
             {users.map((user) => {
               const avatar = mediaUrl(user.avatarUrl);
               return (
                 <li key={user.id}>
                   <Link
-                    href={routes.artist(user.username)}
+                    href={routes.user(user.username)}
                     className="flex items-center gap-3 rounded-xl border border-neutral-800 px-4 py-2 transition hover:border-emerald-500"
                   >
                     <span className="relative h-9 w-9 overflow-hidden rounded-full bg-neutral-800">

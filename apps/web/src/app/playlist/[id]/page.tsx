@@ -81,7 +81,7 @@ export default async function PlaylistPage({ params }: PageProps) {
         {owner && (
           <>
             {' · ساخته‌ی '}
-            <Link href={routes.artist(owner)} className="text-emerald-400 hover:underline">
+            <Link href={routes.user(owner)} className="text-emerald-400 hover:underline">
               {owner}
             </Link>
           </>

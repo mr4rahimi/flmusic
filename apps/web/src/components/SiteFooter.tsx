@@ -17,6 +17,12 @@ export function SiteFooter() {
           <Link href={routes.newest()} className="hover:text-white">
             جدیدترین‌ها
           </Link>
+          <Link href={routes.singers()} className="hover:text-white">
+            خواننده‌ها
+          </Link>
+          <Link href={routes.styles()} className="hover:text-white">
+            سبک‌ها
+          </Link>
           <Link href={routes.search()} className="hover:text-white">
             جستجو
           </Link>

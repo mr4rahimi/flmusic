@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   // خودش پیدایش نمی‌کند و باید صریح به خروجی standalone اضافه شود.
   outputFileTracingIncludes: {
     '/track/[id]/opengraph-image': ['./assets/fonts/**'],
-    '/artist/[username]/opengraph-image': ['./assets/fonts/**'],
+    '/user/[username]/opengraph-image': ['./assets/fonts/**'],
   },
 
   // هدر «X-Powered-By: Next.js» اطلاعات نسخه لو می‌دهد
@@ -42,6 +42,20 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     // کاورها تقریباً هرگز عوض نمی‌شوند؛ کش طولانی یعنی CPU کمتر روی سرور
     minimumCacheTTL: 60 * 60 * 24 * 7,
+  },
+
+  /**
+   * مسیرهای قدیمی نسخه‌ی اول.
+   * `/genre/*` در واقع صفحه‌ی خواننده بود (ستون genre نام خواننده را دارد)،
+   * پس به `/artist/*` می‌رود؛ و `/artist/*` قدیم پروفایل کاربر بود که حالا
+   * `/user/*` است — آن یکی چون با مسیر جدید تداخل دارد، داخل خود صفحه‌ی
+   * `/artist/[name]` تشخیص داده و ریدایرکت می‌شود.
+   */
+  async redirects() {
+    return [
+      { source: '/genre', destination: '/artists', permanent: true },
+      { source: '/genre/:name', destination: '/artist/:name', permanent: true },
+    ];
   },
 
   async headers() {

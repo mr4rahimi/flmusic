@@ -26,7 +26,13 @@ export interface Track {
   audioUrl: string | null;
   duration: number | null;
   waveformData?: number[] | null;
+  /**
+   * ⚠️ نام ستون گمراه‌کننده است: فرم آپلود اپ فندوق «نام خواننده» را در
+   * همین فیلد می‌فرستد (apps/mobile/.../upload_provider.dart → 'genre': artistName).
+   * پس این مقدار **خواننده** است، نه سبک. در UI با helper زیر خوانده شود.
+   */
   genre: string | null;
+  /** برچسب‌های آهنگ (عاشقانه، شاد، …) — همان چیزی که کاربر «سبک» می‌نامد. */
   tags: string[] | null;
   /** خروجی feed و search این دو فیلد را ندارد؛ آنجا از قبل فیلتر شده‌اند. */
   visibility?: TrackVisibility;
@@ -38,6 +44,14 @@ export interface Track {
   createdAt: string;
   updatedAt?: string;
 }
+
+/** خواننده‌ی آهنگ — مقدار واقعی ستون `genre`. */
+export const singerOf = (track: Track): string | null =>
+  track.genre?.trim() || null;
+
+/** سبک‌های آهنگ — مقدار واقعی ستون `tags`. */
+export const stylesOf = (track: Track): string[] =>
+  (track.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
 
 export interface Profile {
   id: string;

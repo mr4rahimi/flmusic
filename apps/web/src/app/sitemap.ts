@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-import { getGenres, getNewTracks, getTrendingTracks } from '@/lib/api';
+import { getNewTracks, getSingers, getStyles, getTrendingTracks } from '@/lib/api';
 import { SITE_URL } from '@/lib/env';
 import { routes } from '@/lib/seo';
 import type { Track } from '@/lib/types';
@@ -35,10 +35,11 @@ async function collectTracks(): Promise<Track[]> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [tracks, trending, genres] = await Promise.all([
+  const [tracks, trending, singers, styles] = await Promise.all([
     collectTracks(),
     getTrendingTracks(1, 50),
-    getGenres(),
+    getSingers(),
+    getStyles(),
   ]);
 
   const now = new Date();
@@ -58,18 +59,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${SITE_URL}/genre`,
+      url: `${SITE_URL}${routes.singers()}`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}${routes.styles()}`,
       lastModified: now,
       changeFrequency: 'weekly',
       priority: 0.7,
     },
   ];
 
-  const genrePages: MetadataRoute.Sitemap = genres.map(({ genre }) => ({
-    url: `${SITE_URL}${routes.genre(genre)}`,
+  // صفحات خواننده مهم‌ترین صفحات دسته‌بندی‌اند: «آهنگ‌های <خواننده>»
+  // پرتقاضاترین عبارت جستجوی فارسی در این حوزه است.
+  const singerPages: MetadataRoute.Sitemap = singers.map(({ name }) => ({
+    url: `${SITE_URL}${routes.singer(name)}`,
     lastModified: now,
     changeFrequency: 'daily',
-    priority: 0.7,
+    priority: 0.8,
+  }));
+
+  const stylePages: MetadataRoute.Sitemap = styles.map(({ name }) => ({
+    url: `${SITE_URL}${routes.style(name)}`,
+    lastModified: now,
+    changeFrequency: 'daily',
+    priority: 0.6,
   }));
 
   // آهنگ‌های داغ اولویت بالاتری می‌گیرند تا زودتر بازخزیده شوند
@@ -82,17 +98,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: trendingIds.has(track.id) ? 0.8 : 0.6,
   }));
 
-  // هر هنرمند یک‌بار — از روی آهنگ‌هایش استخراج می‌شود
+  // هر حساب کاربری یک‌بار — از روی آهنگ‌هایی که منتشر کرده استخراج می‌شود
   const usernames = new Set(
     tracks.map((track) => track.user?.username).filter(Boolean) as string[],
   );
 
-  const artistPages: MetadataRoute.Sitemap = [...usernames].map((username) => ({
-    url: `${SITE_URL}${routes.artist(username)}`,
+  const userPages: MetadataRoute.Sitemap = [...usernames].map((username) => ({
+    url: `${SITE_URL}${routes.user(username)}`,
     lastModified: now,
     changeFrequency: 'weekly',
-    priority: 0.7,
+    priority: 0.5,
   }));
 
-  return [...staticPages, ...genrePages, ...artistPages, ...trackPages];
+  return [
+    ...staticPages,
+    ...singerPages,
+    ...stylePages,
+    ...userPages,
+    ...trackPages,
+  ];
 }

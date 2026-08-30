@@ -7,6 +7,8 @@ import { routes } from '@/lib/seo';
 const NAV_LINKS = [
   { href: routes.trending(), label: 'داغ‌ترین‌ها' },
   { href: routes.newest(), label: 'جدیدترین‌ها' },
+  { href: routes.singers(), label: 'خواننده‌ها' },
+  { href: routes.styles(), label: 'سبک‌ها' },
 ];
 
 export function SiteHeader() {

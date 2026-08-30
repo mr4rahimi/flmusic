@@ -4,7 +4,7 @@ import { formatCount } from '@/lib/format';
 import { OG_CONTENT_TYPE, OG_SIZE, ogCard } from '@/lib/og';
 import { mediaUrl } from '@/lib/seo';
 
-export const alt = 'پروفایل هنرمند';
+export const alt = 'پروفایل کاربر';
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 

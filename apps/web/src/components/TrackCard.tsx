@@ -3,6 +3,7 @@ import { Cover } from './Cover';
 import { PlayButton } from './player/PlayButton';
 import { formatCount, formatDuration } from '@/lib/format';
 import { routes } from '@/lib/seo';
+import { singerOf } from '@/lib/types';
 import type { Track } from '@/lib/types';
 
 interface TrackCardProps {
@@ -12,7 +13,8 @@ interface TrackCardProps {
 }
 
 export function TrackCard({ track, priority }: TrackCardProps) {
-  const artist = track.user?.username;
+  // زیر عنوان، نام خواننده می‌آید (ستون genre) نه نام حساب آپلودکننده
+  const singer = singerOf(track);
 
   return (
     <article className="group">
@@ -24,7 +26,7 @@ export function TrackCard({ track, priority }: TrackCardProps) {
         >
           <Cover
             src={track.coverUrl}
-            alt={artist ? `کاور آهنگ ${track.title} از ${artist}` : `کاور آهنگ ${track.title}`}
+            alt={singer ? `کاور آهنگ ${track.title} از ${singer}` : `کاور آهنگ ${track.title}`}
             sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 220px"
             priority={priority}
           />
@@ -40,10 +42,10 @@ export function TrackCard({ track, priority }: TrackCardProps) {
         </Link>
       </h3>
 
-      {artist && (
+      {singer && (
         <p className="truncate text-xs text-neutral-400">
-          <Link href={routes.artist(artist)} className="hover:underline">
-            {artist}
+          <Link href={routes.singer(singer)} className="hover:underline">
+            {singer}
           </Link>
         </p>
       )}

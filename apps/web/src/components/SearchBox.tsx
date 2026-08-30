@@ -22,7 +22,7 @@ export function SearchBox({ className }: { className?: string }) {
       className={className}
     >
       <label htmlFor="site-search" className="sr-only">
-        جستجوی آهنگ و هنرمند
+        جستجوی آهنگ، خواننده و کاربر
       </label>
       <input
         id="site-search"
@@ -30,7 +30,7 @@ export function SearchBox({ className }: { className?: string }) {
         type="search"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="جستجوی آهنگ یا هنرمند…"
+        placeholder="جستجوی آهنگ یا خواننده…"
         className="w-full rounded-full border border-neutral-800 bg-neutral-900 px-4 py-2 text-sm outline-none placeholder:text-neutral-500 focus:border-emerald-500"
       />
     </form>
