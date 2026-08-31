@@ -15,6 +15,7 @@
 #   ./deploy.sh rollback     بازگشت به نسخه‌ی قبلی
 #   ./deploy.sh status       وضعیت سرویس و نسخه‌ی فعال
 #   ./deploy.sh nginx        نصب/به‌روزرسانی کانفیگ nginx (با تست قبل از reload)
+#   ./deploy.sh ssl          گرفتن گواهی Let's Encrypt و فعال‌کردن HTTPS
 #
 # احراز هویت SSH: کلید عمومی توصیه می‌شود.
 #   ssh-copy-id root@185.164.73.224
@@ -34,6 +35,10 @@ APP_PORT="${APP_PORT:-3006}"
 KEEP_RELEASES="${KEEP_RELEASES:-5}"
 
 NGINX_SITE="${NGINX_SITE:-flmusic.ir}"
+DOMAIN="${DOMAIN:-flmusic.ir}"
+CERT_EMAIL="${CERT_EMAIL:-shiralat.top@gmail.com}"
+# همان مسیری که سایت‌های دیگر این سرور برای چالش ACME استفاده می‌کنند
+WEBROOT="${WEBROOT:-/var/www/certbot}"
 
 # آدرس API هنگام build.
 # .env.production آدرس داخلی 127.0.0.1:3000 را دارد که فقط روی خود سرور
@@ -323,14 +328,88 @@ cmd_nginx() {
   c_ok "nginx به‌روزرسانی شد"
 }
 
+# --- گرفتن گواهی SSL ------------------------------------------------------
+# کانفیگ اصلی به /etc/letsencrypt/live/<domain>/ ارجاع می‌دهد، پس تا وقتی
+# گواهی وجود ندارد `nginx -t` رد می‌شود. این تابع ترتیب درست را رعایت می‌کند:
+# اول یک بلوک موقت فقط-HTTP برای چالش ACME، بعد گرفتن گواهی، بعد کانفیگ کامل.
+cmd_ssl() {
+  c_info "گرفتن گواهی Let's Encrypt برای $DOMAIN…"
+
+  ssh_run "command -v certbot >/dev/null" || {
+    c_err "certbot روی سرور نصب نیست"
+    exit 1
+  }
+
+  # اگر گواهی معتبر از قبل هست، دوباره نمی‌گیریم (سقف نرخ Let's Encrypt)
+  if ssh_run "certbot certificates 2>/dev/null | grep -q 'Certificate Name: $DOMAIN$'"; then
+    c_ok "گواهی $DOMAIN از قبل وجود دارد"
+  else
+    c_info "نصب بلوک موقت HTTP برای چالش ACME…"
+
+    # این فایل فقط server_name خودمان را می‌گیرد و default_server ندارد،
+    # پس در این فاصله هیچ دامنه‌ی دیگری تحت تأثیر نیست.
+    ssh_run "set -e
+      mkdir -p '$WEBROOT/.well-known/acme-challenge'
+      site='/etc/nginx/sites-available/$NGINX_SITE'
+      if [ -f \"\$site\" ]; then cp \"\$site\" \"\$site.bak.\$(date +%s)\"; fi
+      cat > \"\$site\" <<'CONF'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN www.$DOMAIN;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root $WEBROOT;
+        default_type \"text/plain\";
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:$APP_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Host       \$host;
+        proxy_set_header Connection \"\";
+    }
+}
+CONF
+      ln -sfn \"\$site\" '/etc/nginx/sites-enabled/$NGINX_SITE'
+      nginx -t && systemctl reload nginx"
+
+    c_ok "بلوک موقت فعال شد"
+
+    c_info "درخواست گواهی (روش webroot)…"
+    ssh_run "certbot certonly --webroot -w '$WEBROOT' \
+      -d '$DOMAIN' -d 'www.$DOMAIN' \
+      --email '$CERT_EMAIL' --agree-tos --no-eff-email \
+      --non-interactive --keep-until-expiring" || {
+      c_err "گرفتن گواهی شکست خورد."
+      c_warn "معمول‌ترین علت: DNS هنوز به این سرور اشاره نمی‌کند یا CDN روشن است."
+      exit 1
+    }
+
+    c_ok "گواهی صادر شد"
+  fi
+
+  # حالا که گواهی هست، کانفیگ کامل با بلوک ۴۴۳ نصب می‌شود
+  cmd_nginx
+
+  c_info "بررسی HTTPS…"
+  local code
+  code="$(ssh_run "curl -s -o /dev/null -w '%{http_code}' -m 15 --resolve '$DOMAIN:443:127.0.0.1' 'https://$DOMAIN/' || true")"
+  [[ "$code" == "200" ]] && c_ok "https://$DOMAIN → $code" || c_warn "https://$DOMAIN → ${code:-timeout}"
+
+  c_info "تمدید خودکار…"
+  ssh_run "systemctl list-timers certbot.timer --no-pager 2>/dev/null | tail -2 || echo 'تایمر certbot پیدا نشد'"
+}
+
 case "${1:-deploy}" in
   deploy)   cmd_deploy ;;
   rollback) cmd_rollback ;;
   status)   cmd_status ;;
   nginx)    cmd_nginx ;;
+  ssl)      cmd_ssl ;;
   *)
     c_err "دستور ناشناخته: $1"
-    echo "استفاده: $0 [deploy|rollback|status|nginx]"
+    echo "استفاده: $0 [deploy|rollback|status|nginx|ssl]"
     exit 1
     ;;
 esac
